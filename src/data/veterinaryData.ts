@@ -1,8 +1,11 @@
 import { ServiceItem, Testimonial, TeamMember, FaqItem, MapBranch } from '../types';
+import heroImg from '../assets/images/vet_hero_banner_1784829644946.jpg';
+import teamCareImg from '../assets/images/vet_team_care_1784829654928.jpg';
+import doctorPortraitImg from '../assets/images/vet_doctor_portrait_1784829664517.jpg';
 
-export const HERO_IMAGE = '/src/assets/images/vet_hero_banner_1784829644946.jpg';
-export const TEAM_CARE_IMAGE = '/src/assets/images/vet_team_care_1784829654928.jpg';
-export const DOCTOR_PORTRAIT_IMAGE = '/src/assets/images/vet_doctor_portrait_1784829664517.jpg';
+export const HERO_IMAGE = heroImg;
+export const TEAM_CARE_IMAGE = teamCareImg;
+export const DOCTOR_PORTRAIT_IMAGE = doctorPortraitImg;
 
 export const CLINIC_INFO = {
   name: 'Clínica Veterinaria Amor & Huellitas',
