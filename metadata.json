@@ -1,0 +1,6 @@
+{
+  "name": "Clínica Veterinaria Amor & Huellitas",
+  "description": "Landing page amigable, confiable y vendedora para clínica veterinaria con reserva de citas rápida, testimonios reales, mapa interactivo, servicios y preguntas frecuentes.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

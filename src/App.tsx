@@ -1,0 +1,80 @@
+import React, { useState } from 'react';
+import { Header } from './components/Header';
+import { Hero } from './components/Hero';
+import { ValueProps } from './components/ValueProps';
+import { PetHealthCalculator } from './components/PetHealthCalculator';
+import { TeamSection } from './components/TeamSection';
+import { TestimonialsSection } from './components/TestimonialsSection';
+import { InteractiveMapSection } from './components/InteractiveMapSection';
+import { EmergencyBanner } from './components/EmergencyBanner';
+import { NotificationToast } from './components/NotificationToast';
+import { AppointmentModal } from './components/AppointmentModal';
+import { WhatsAppWidget } from './components/WhatsAppWidget';
+import { Footer } from './components/Footer';
+
+export default function App() {
+  const [bookingModalOpen, setBookingModalOpen] = useState(false);
+  const [selectedServiceId, setSelectedServiceId] = useState<string | undefined>(undefined);
+  const [selectedPetSpecies, setSelectedPetSpecies] = useState<string | undefined>(undefined);
+
+  const handleOpenBooking = (serviceId?: string, petSpecies?: string) => {
+    setSelectedServiceId(serviceId);
+    setSelectedPetSpecies(petSpecies);
+    setBookingModalOpen(true);
+  };
+
+  const handleCloseBooking = () => {
+    setBookingModalOpen(false);
+  };
+
+  return (
+    <div className="min-h-screen bg-white text-slate-900 font-sans antialiased selection:bg-emerald-100 selection:text-emerald-900">
+      
+      {/* Header Navigation Bar */}
+      <Header onOpenBooking={handleOpenBooking} />
+
+      {/* Main Landing Page Content */}
+      <main>
+        {/* Hero Banner & Fast Booking Form */}
+        <Hero onOpenBooking={handleOpenBooking} />
+
+        {/* Value Propositions & Fear-Free Philosophy */}
+        <ValueProps />
+
+        {/* Certified Doctor Team */}
+        <TeamSection />
+
+        {/* Interactive Pet Age & Health Care Calculator */}
+        <PetHealthCalculator onOpenBooking={handleOpenBooking} />
+
+        {/* 24/7 Emergency Hotline Callout */}
+        <EmergencyBanner />
+
+        {/* Customer Testimonials & Reviews */}
+        <TestimonialsSection />
+
+        {/* Interactive Access Map & Parking Location */}
+        <InteractiveMapSection />
+      </main>
+
+      {/* Footer */}
+      <Footer onOpenBooking={() => handleOpenBooking()} />
+
+      {/* Fast Appointment Booking Wizard Modal */}
+      <AppointmentModal
+        isOpen={bookingModalOpen}
+        onClose={handleCloseBooking}
+        initialServiceId={selectedServiceId}
+        initialPetSpecies={selectedPetSpecies}
+      />
+
+      {/* Floating Recent Activity Social Proof Toast */}
+      <NotificationToast onOpenBooking={() => handleOpenBooking()} />
+
+      {/* Floating WhatsApp Quick Action Widget */}
+      <WhatsAppWidget />
+
+    </div>
+  );
+}
+
