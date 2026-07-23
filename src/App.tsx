@@ -10,6 +10,7 @@ import { EmergencyBanner } from './components/EmergencyBanner';
 import { NotificationToast } from './components/NotificationToast';
 import { AppointmentModal } from './components/AppointmentModal';
 import { WhatsAppWidget } from './components/WhatsAppWidget';
+import { MobileBottomBar } from './components/MobileBottomBar';
 import { Footer } from './components/Footer';
 
 export default function App() {
@@ -28,7 +29,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-white text-slate-900 font-sans antialiased selection:bg-emerald-100 selection:text-emerald-900">
+    <div className="min-h-screen bg-white text-slate-900 font-sans antialiased selection:bg-emerald-100 selection:text-emerald-900 pb-16 md:pb-0">
       
       {/* Header Navigation Bar */}
       <Header onOpenBooking={handleOpenBooking} />
@@ -73,6 +74,9 @@ export default function App() {
 
       {/* Floating WhatsApp Quick Action Widget */}
       <WhatsAppWidget />
+
+      {/* Sticky Mobile Action Bar for 1-tap Phone, WhatsApp & Appointments */}
+      <MobileBottomBar onOpenBooking={handleOpenBooking} />
 
     </div>
   );

@@ -50,7 +50,7 @@ export const NotificationToast: React.FC<{ onOpenBooking: () => void }> = ({ onO
   const activity = ACTIVITIES[currentIndex];
 
   return (
-    <div className="fixed bottom-5 left-5 z-30 max-w-sm w-full bg-white/95 backdrop-blur-md rounded-2xl p-4 shadow-2xl border border-emerald-200/80 animate-in slide-in-from-bottom-5 duration-300">
+    <div className="fixed bottom-20 left-4 md:bottom-5 md:left-5 z-30 max-w-sm w-full bg-white/95 backdrop-blur-md rounded-2xl p-4 shadow-2xl border border-emerald-200/80 animate-in slide-in-from-bottom-5 duration-300">
       <button
         onClick={() => setDismissed(true)}
         className="absolute top-2.5 right-2.5 text-slate-400 hover:text-slate-600 p-1"

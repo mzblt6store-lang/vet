@@ -61,20 +61,20 @@ export const Hero: React.FC<HeroProps> = ({ onOpenBooking }) => {
             </div>
 
             {/* CTA Buttons */}
-            <div className="flex flex-wrap gap-4 pt-2">
+            <div className="flex flex-col sm:flex-row gap-3 pt-2">
               <button
                 onClick={() => onOpenBooking()}
-                className="bg-orange-500 hover:bg-orange-600 active:scale-98 text-white px-8 py-4 rounded-xl text-lg font-bold shadow-xl shadow-orange-200 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full sm:w-auto bg-orange-500 hover:bg-orange-600 active:scale-98 text-white px-8 py-4 rounded-xl text-base sm:text-lg font-bold shadow-xl shadow-orange-200 transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Calendar className="w-5 h-5 text-white/90" />
                 <span>Cita Rápida Online</span>
               </button>
 
               <a
-                href="#servicios"
-                className="bg-white border-2 border-emerald-100 text-emerald-700 px-8 py-4 rounded-xl text-lg font-bold hover:bg-emerald-50 transition-all flex items-center justify-center gap-2"
+                href="#calculadora"
+                className="w-full sm:w-auto bg-white border-2 border-emerald-200 text-emerald-800 px-8 py-4 rounded-xl text-base sm:text-lg font-bold hover:bg-emerald-50 transition-all flex items-center justify-center gap-2 text-center"
               >
-                <span>Ver Servicios</span>
+                <span>Calculadora de Salud</span>
               </a>
             </div>
 
