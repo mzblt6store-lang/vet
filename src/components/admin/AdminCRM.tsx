@@ -16,7 +16,7 @@ export const AdminCRM: React.FC = () => {
 
   // Handle Return to Site
   const handleReturnToSite = () => {
-    window.location.hash = '';
+    window.location.href = '/';
   };
 
   return (

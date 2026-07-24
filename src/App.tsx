@@ -18,14 +18,20 @@ export default function App() {
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [selectedServiceId, setSelectedServiceId] = useState<string | undefined>(undefined);
   const [selectedPetSpecies, setSelectedPetSpecies] = useState<string | undefined>(undefined);
-  const [isAdminView, setIsAdminView] = useState(() => window.location.hash === '#admin');
+  const [isAdminView, setIsAdminView] = useState(() => 
+    window.location.hash === '#admin' || window.location.pathname === '/admin'
+  );
 
   useEffect(() => {
-    const handleHashChange = () => {
-      setIsAdminView(window.location.hash === '#admin');
+    const handleLocationChange = () => {
+      setIsAdminView(window.location.hash === '#admin' || window.location.pathname === '/admin');
     };
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
+    window.addEventListener('hashchange', handleLocationChange);
+    window.addEventListener('popstate', handleLocationChange);
+    return () => {
+      window.removeEventListener('hashchange', handleLocationChange);
+      window.removeEventListener('popstate', handleLocationChange);
+    };
   }, []);
 
   const handleOpenBooking = (serviceId?: string, petSpecies?: string) => {

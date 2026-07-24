@@ -124,7 +124,7 @@ export const Footer: React.FC<FooterProps> = ({ onOpenBooking }) => {
             <span className="text-emerald-800">|</span>
             <a href="#" onClick={(e) => e.preventDefault()} className="hover:underline">Políticas de Privacidad</a>
             <span className="text-emerald-800">|</span>
-            <a href="#admin" className="hover:underline flex items-center gap-1">
+            <a href="/admin" className="hover:underline flex items-center gap-1">
               Portal Admin
             </a>
           </div>
