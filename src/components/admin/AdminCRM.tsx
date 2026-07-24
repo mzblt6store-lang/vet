@@ -4,7 +4,7 @@ import {
   ChevronRight, CheckCircle2, Clock, AlertTriangle, 
   MessageSquare, Phone, Filter, ShieldCheck, Database, RefreshCw, Send,
   HeartPulse, Stethoscope, Syringe, Check, ExternalLink, Sun, Moon,
-  LayoutGrid, List, MoveRight, ArrowRight, X, Sparkles, UserCheck, Clipboard
+  LayoutGrid, List, MoveRight, ArrowRight, X, Sparkles, UserCheck, Clipboard, Menu
 } from 'lucide-react';
 import { CLINIC_INFO } from '../../data/veterinaryData';
 import { supabase } from '../../lib/supabase';
@@ -219,7 +219,10 @@ interface AdminCRMProps {
 
 export const AdminCRM: React.FC<AdminCRMProps> = ({ onLogout }) => {
   const [isDarkMode, setIsDarkMode] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'kanban' | 'patients' | 'appointments_list' | 'integrations'>('kanban');
+  const [appointmentViewMode, setAppointmentViewMode] = useState<'kanban' | 'list'>('kanban');
+  const [statusFilter, setStatusFilter] = useState<'todos' | 'pendiente' | 'consulta' | 'tratamiento' | 'completada'>('todos');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSpecies, setSelectedSpecies] = useState('todos');
   
@@ -383,12 +386,23 @@ export const AdminCRM: React.FC<AdminCRMProps> = ({ onLogout }) => {
         </div>
       )}
 
+      {/* Mobile/Tablet Backdrop Overlay when Sidebar is expanded */}
+      {isSidebarOpen && (
+        <div 
+          onClick={() => setIsSidebarOpen(false)}
+          className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs z-40 lg:hidden animate-in fade-in duration-200"
+        />
+      )}
+
       {/* Sidebar Navigation */}
-      <aside className={`w-full md:w-64 border-r flex-shrink-0 flex flex-col justify-between transition-colors duration-300 ${
-        isDarkMode 
-          ? 'bg-slate-900/90 border-slate-800/80' 
-          : 'bg-white border-slate-200'
-      }`}>
+      <aside className={`
+        ${isSidebarOpen ? 'fixed inset-y-0 left-0 z-50 w-72 shadow-2xl' : 'hidden lg:flex'} 
+        lg:relative lg:w-64 border-r flex-shrink-0 flex flex-col justify-between transition-colors duration-300 ${
+          isDarkMode 
+            ? 'bg-slate-900 border-slate-800/80' 
+            : 'bg-white border-slate-200'
+        }
+      `}>
         <div>
           {/* Brand Header */}
           <div className={`p-5 border-b flex items-center justify-between ${
@@ -405,14 +419,26 @@ export const AdminCRM: React.FC<AdminCRMProps> = ({ onLogout }) => {
                 <p className="text-[10px] text-emerald-500 font-bold uppercase tracking-wider">Flujo Kanban & Historias</p>
               </div>
             </div>
+
+            {/* Close Sidebar button on mobile */}
+            <button 
+              onClick={() => setIsSidebarOpen(false)}
+              className="lg:hidden p-1.5 rounded-xl hover:bg-slate-800 text-slate-400 cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
 
           {/* Navigation Links */}
           <nav className="p-3 space-y-1.5">
             <button 
-              onClick={() => setActiveTab('kanban')}
+              onClick={() => {
+                setActiveTab('kanban');
+                setAppointmentViewMode('kanban');
+                setIsSidebarOpen(false);
+              }}
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
-                activeTab === 'kanban' 
+                activeTab === 'kanban' && appointmentViewMode === 'kanban'
                   ? 'bg-emerald-400 text-slate-950 shadow-lg shadow-emerald-500/20' 
                   : isDarkMode 
                     ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60' 
@@ -424,7 +450,10 @@ export const AdminCRM: React.FC<AdminCRMProps> = ({ onLogout }) => {
             </button>
 
             <button 
-              onClick={() => setActiveTab('patients')}
+              onClick={() => {
+                setActiveTab('patients');
+                setIsSidebarOpen(false);
+              }}
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === 'patients' 
                   ? 'bg-emerald-400 text-slate-950 shadow-lg shadow-emerald-500/20' 
@@ -438,9 +467,13 @@ export const AdminCRM: React.FC<AdminCRMProps> = ({ onLogout }) => {
             </button>
 
             <button 
-              onClick={() => setActiveTab('appointments_list')}
+              onClick={() => {
+                setActiveTab('kanban');
+                setAppointmentViewMode('list');
+                setIsSidebarOpen(false);
+              }}
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
-                activeTab === 'appointments_list' 
+                activeTab === 'kanban' && appointmentViewMode === 'list'
                   ? 'bg-emerald-400 text-slate-950 shadow-lg shadow-emerald-500/20' 
                   : isDarkMode 
                     ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60' 
@@ -448,11 +481,14 @@ export const AdminCRM: React.FC<AdminCRMProps> = ({ onLogout }) => {
               }`}
             >
               <List className="w-4 h-4" />
-              Lista de Agenda
+              Vista Lista (Tablet/Móvil)
             </button>
 
             <button 
-              onClick={() => setActiveTab('integrations')}
+              onClick={() => {
+                setActiveTab('integrations');
+                setIsSidebarOpen(false);
+              }}
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === 'integrations' 
                   ? 'bg-emerald-400 text-slate-950 shadow-lg shadow-emerald-500/20' 
@@ -494,16 +530,30 @@ export const AdminCRM: React.FC<AdminCRMProps> = ({ onLogout }) => {
       <main className="flex-1 flex flex-col h-screen overflow-hidden">
         
         {/* Top Header Bar */}
-        <header className={`border-b h-16 flex items-center justify-between px-6 flex-shrink-0 transition-colors duration-300 ${
+        <header className={`border-b h-16 flex items-center justify-between px-4 sm:px-6 flex-shrink-0 transition-colors duration-300 ${
           isDarkMode ? 'bg-slate-900/90 border-slate-800/80' : 'bg-white border-slate-200 shadow-xs'
         }`}>
-          <div className="flex items-center gap-4 flex-1 max-w-md">
+          <div className="flex items-center gap-2 sm:gap-4 flex-1 max-w-md">
+            {/* Sidebar Toggle Button for Tablets / Mobile */}
+            <button
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className={`p-2 rounded-xl border transition-all flex items-center gap-1.5 text-xs font-bold cursor-pointer ${
+                isDarkMode 
+                  ? 'bg-slate-950 border-slate-800 text-slate-200 hover:bg-slate-800' 
+                  : 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200'
+              }`}
+              title="Menú Secciones CRM"
+            >
+              <Menu className="w-5 h-5 text-emerald-400" />
+              <span className="hidden sm:inline text-xs font-extrabold">Secciones</span>
+            </button>
+
             <div className="relative w-full">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input 
                 type="text" 
-                placeholder="Buscar paciente, propietario o tratamiento..." 
-                className={`w-full pl-9 pr-4 py-2 border rounded-xl text-xs focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all ${
+                placeholder="Buscar paciente o dueño..." 
+                className={`w-full pl-9 pr-3 py-2 border rounded-xl text-xs focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all ${
                   isDarkMode 
                     ? 'bg-slate-950 border-slate-800 text-white placeholder-slate-500' 
                     : 'bg-slate-50 border-slate-200 text-slate-800 placeholder-slate-400'
@@ -552,183 +602,370 @@ export const AdminCRM: React.FC<AdminCRMProps> = ({ onLogout }) => {
         {/* Dynamic Content Views */}
         <div className="flex-1 overflow-auto p-4 sm:p-6 space-y-6">
           
-          {/* VIEW 1: INTERACTIVE KANBAN BOARD */}
+          {/* VIEW 1: INTERACTIVE KANBAN BOARD & LIST VIEW */}
           {activeTab === 'kanban' && (
             <div className="space-y-4 animate-in fade-in duration-300">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-slate-800/40">
                 <div>
                   <h2 className={`text-xl font-extrabold flex items-center gap-2 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
-                    <span>Tablero Kanban de Atención Médica</span>
+                    <span>Gestión de Citas y Atención Médica</span>
                     <Sparkles className="w-5 h-5 text-emerald-400" />
                   </h2>
                   <p className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
-                    Arrastra o cambia el estado de cada paciente en tiempo real según el avance en la clínica.
+                    {appointmentViewMode === 'kanban' 
+                      ? 'Vista Kanban en columnas para flujo continuo de atención.' 
+                      : 'Vista Lista optimizada para consulta rápida en Tablets y Smartphones.'}
                   </p>
                 </div>
 
-                <div className={`text-xs px-3 py-1.5 rounded-full border flex items-center gap-2 ${
-                  isDarkMode ? 'bg-emerald-950/60 border-emerald-800 text-emerald-300' : 'bg-emerald-50 border-emerald-200 text-emerald-800'
-                }`}>
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-                  Sincronizado con n8n & Evolution API
+                {/* View Mode Toggle Switcher */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <div className={`p-1 rounded-2xl border flex items-center gap-1 ${
+                    isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-slate-200/80 border-slate-300'
+                  }`}>
+                    <button
+                      onClick={() => setAppointmentViewMode('kanban')}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                        appointmentViewMode === 'kanban'
+                          ? 'bg-emerald-400 text-slate-950 shadow-md shadow-emerald-500/20'
+                          : isDarkMode ? 'text-slate-400 hover:text-white' : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      <LayoutGrid className="w-4 h-4" />
+                      <span>Vista Kanban</span>
+                    </button>
+                    <button
+                      onClick={() => setAppointmentViewMode('list')}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                        appointmentViewMode === 'list'
+                          ? 'bg-emerald-400 text-slate-950 shadow-md shadow-emerald-500/20'
+                          : isDarkMode ? 'text-slate-400 hover:text-white' : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      <List className="w-4 h-4" />
+                      <span>Vista Lista (Tablet)</span>
+                    </button>
+                  </div>
+
+                  <div className={`text-xs px-3 py-1.5 rounded-full border hidden sm:flex items-center gap-2 ${
+                    isDarkMode ? 'bg-emerald-950/60 border-emerald-800 text-emerald-300' : 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                  }`}>
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                    Sincronizado n8n
+                  </div>
                 </div>
               </div>
 
-              {/* Kanban Grid Columns */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
-                {KANBAN_COLUMNS.map((column) => {
-                  const columnAppointments = appointmentsList.filter(
-                    apt => apt.status === column.id && 
-                    (apt.petName.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                     apt.owner.toLowerCase().includes(searchTerm.toLowerCase()))
-                  );
+              {/* MODE A: KANBAN GRID COLUMNS */}
+              {appointmentViewMode === 'kanban' ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
+                  {KANBAN_COLUMNS.map((column) => {
+                    const columnAppointments = appointmentsList.filter(
+                      apt => apt.status === column.id && 
+                      (apt.petName.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                       apt.owner.toLowerCase().includes(searchTerm.toLowerCase()))
+                    );
 
-                  return (
-                    <div 
-                      key={column.id} 
-                      className={`rounded-2xl border p-3 min-h-[500px] flex flex-col transition-colors ${
-                        isDarkMode ? 'bg-slate-900/60 border-slate-800/80' : 'bg-slate-100/80 border-slate-200'
-                      }`}
-                    >
-                      {/* Column Header */}
-                      <div className={`p-2.5 rounded-xl border font-bold text-xs flex items-center justify-between mb-3 ${column.headerBg}`}>
-                        <span>{column.label}</span>
-                        <span className="w-5 h-5 rounded-full bg-slate-950/30 flex items-center justify-center text-[10px]">
-                          {columnAppointments.length}
-                        </span>
-                      </div>
+                    return (
+                      <div 
+                        key={column.id} 
+                        className={`rounded-2xl border p-3 min-h-[500px] flex flex-col transition-colors ${
+                          isDarkMode ? 'bg-slate-900/60 border-slate-800/80' : 'bg-slate-100/80 border-slate-200'
+                        }`}
+                      >
+                        {/* Column Header */}
+                        <div className={`p-2.5 rounded-xl border font-bold text-xs flex items-center justify-between mb-3 ${column.headerBg}`}>
+                          <span>{column.label}</span>
+                          <span className="w-5 h-5 rounded-full bg-slate-950/30 flex items-center justify-center text-[10px]">
+                            {columnAppointments.length}
+                          </span>
+                        </div>
 
-                      {/* Column Cards */}
-                      <div className="space-y-3 flex-1 overflow-y-auto">
-                        {columnAppointments.map((apt) => {
-                          const patientData = patientsList.find(p => p.name.toLowerCase() === apt.petName.toLowerCase());
+                        {/* Column Cards */}
+                        <div className="space-y-3 flex-1 overflow-y-auto">
+                          {columnAppointments.map((apt) => {
+                            const patientData = patientsList.find(p => p.name.toLowerCase() === apt.petName.toLowerCase());
 
-                          return (
-                            <div 
-                              key={apt.id}
-                              className={`p-3.5 rounded-xl border shadow-sm space-y-3 transition-all hover:scale-[1.01] ${
-                                isDarkMode 
-                                  ? 'bg-slate-950 border-slate-800 hover:border-slate-700 text-slate-100' 
-                                  : 'bg-white border-slate-200 hover:border-slate-300 text-slate-900'
-                              }`}
-                            >
-                              {/* Card Top: Pet Info & Time */}
-                              <div className="flex items-start justify-between gap-2">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-2xl">{apt.avatar}</span>
-                                  <div>
-                                    <h4 className="font-extrabold text-sm flex items-center gap-1.5">
-                                      <span>{apt.petName}</span>
-                                      <span className="text-[10px] text-emerald-500 font-normal">({apt.species})</span>
-                                    </h4>
-                                    <p className={`text-[11px] ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                                      Dueño: <strong className={isDarkMode ? 'text-slate-200' : 'text-slate-800'}>{apt.owner}</strong>
-                                    </p>
+                            return (
+                              <div 
+                                key={apt.id}
+                                className={`p-3.5 rounded-xl border shadow-sm space-y-3 transition-all hover:scale-[1.01] ${
+                                  isDarkMode 
+                                    ? 'bg-slate-950 border-slate-800 hover:border-slate-700 text-slate-100' 
+                                    : 'bg-white border-slate-200 hover:border-slate-300 text-slate-900'
+                                }`}
+                              >
+                                {/* Card Top: Pet Info & Time */}
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-2xl">{apt.avatar}</span>
+                                    <div>
+                                      <h4 className="font-extrabold text-sm flex items-center gap-1.5">
+                                        <span>{apt.petName}</span>
+                                        <span className="text-[10px] text-emerald-500 font-normal">({apt.species})</span>
+                                      </h4>
+                                      <p className={`text-[11px] ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                                        Dueño: <strong className={isDarkMode ? 'text-slate-200' : 'text-slate-800'}>{apt.owner}</strong>
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <span className={`text-[10px] font-mono px-2 py-0.5 rounded-md font-bold border ${
+                                    isDarkMode ? 'bg-slate-900 border-slate-800 text-amber-300' : 'bg-amber-50 border-amber-200 text-amber-800'
+                                  }`}>
+                                    {apt.time}
+                                  </span>
+                                </div>
+
+                                {/* Service & Notes */}
+                                <div className={`p-2 rounded-lg border text-xs space-y-1 ${
+                                  isDarkMode ? 'bg-slate-900/80 border-slate-800/80' : 'bg-slate-50 border-slate-100'
+                                }`}>
+                                  <p className="font-bold text-emerald-600 dark:text-emerald-400">🩺 {apt.service}</p>
+                                  <p className={`text-[11px] ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                                    Médico: {apt.doctor}
+                                  </p>
+                                </div>
+
+                                {/* Actions Bar inside Card */}
+                                <div className="pt-1 flex items-center justify-between gap-1 text-[11px]">
+                                  {patientData ? (
+                                    <button
+                                      onClick={() => setSelectedPatient(patientData)}
+                                      className="text-emerald-500 hover:underline font-bold flex items-center gap-1 cursor-pointer"
+                                    >
+                                      <Clipboard className="w-3.5 h-3.5" />
+                                      Ver Historia
+                                    </button>
+                                  ) : (
+                                    <span className="text-slate-500 text-[10px]">Sin Ficha</span>
+                                  )}
+
+                                  {/* WhatsApp Button */}
+                                  <a
+                                    href={`https://wa.me/${apt.phone.replace(/\D/g,'')}?text=${encodeURIComponent(`Hola ${apt.owner}, te escribimos de VetAmor sobre el estado de la consulta de ${apt.petName}.`)}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-emerald-400 hover:text-emerald-300 p-1 rounded hover:bg-emerald-950/40 cursor-pointer"
+                                    title="Escribir por WhatsApp"
+                                  >
+                                    <MessageSquare className="w-3.5 h-3.5" />
+                                  </a>
+                                </div>
+
+                                {/* Move Status Dropdown / Quick Buttons */}
+                                <div className="pt-2 border-t border-slate-800/60 flex items-center justify-between">
+                                  <span className={`text-[10px] ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>Mover a:</span>
+                                  <div className="flex items-center gap-1">
+                                    {column.id !== 'pendiente' && (
+                                      <button
+                                        onClick={() => moveAppointmentStatus(apt.id, 'pendiente')}
+                                        className="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] cursor-pointer"
+                                        title="Mover a Por Atender"
+                                      >
+                                        📌
+                                      </button>
+                                    )}
+                                    {column.id !== 'consulta' && (
+                                      <button
+                                        onClick={() => moveAppointmentStatus(apt.id, 'consulta')}
+                                        className="px-1.5 py-0.5 rounded bg-sky-900/60 hover:bg-sky-800 text-sky-200 text-[10px] cursor-pointer"
+                                        title="Mover a En Consulta"
+                                      >
+                                        🩺
+                                      </button>
+                                    )}
+                                    {column.id !== 'tratamiento' && (
+                                      <button
+                                        onClick={() => moveAppointmentStatus(apt.id, 'tratamiento')}
+                                        className="px-1.5 py-0.5 rounded bg-amber-900/60 hover:bg-amber-800 text-amber-200 text-[10px] cursor-pointer"
+                                        title="Mover a Procedimiento"
+                                      >
+                                        💉
+                                      </button>
+                                    )}
+                                    {column.id !== 'completada' && (
+                                      <button
+                                        onClick={() => moveAppointmentStatus(apt.id, 'completada')}
+                                        className="px-1.5 py-0.5 rounded bg-emerald-900/60 hover:bg-emerald-800 text-emerald-200 text-[10px] cursor-pointer"
+                                        title="Mover a Completada"
+                                      >
+                                        ✅
+                                      </button>
+                                    )}
                                   </div>
                                 </div>
-                                <span className={`text-[10px] font-mono px-2 py-0.5 rounded-md font-bold border ${
-                                  isDarkMode ? 'bg-slate-900 border-slate-800 text-amber-300' : 'bg-amber-50 border-amber-200 text-amber-800'
-                                }`}>
-                                  {apt.time}
-                                </span>
+
                               </div>
+                            );
+                          })}
 
-                              {/* Service & Notes */}
-                              <div className={`p-2 rounded-lg border text-xs space-y-1 ${
-                                isDarkMode ? 'bg-slate-900/80 border-slate-800/80' : 'bg-slate-50 border-slate-100'
-                              }`}>
-                                <p className="font-bold text-emerald-600 dark:text-emerald-400">🩺 {apt.service}</p>
-                                <p className={`text-[11px] ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
-                                  Médico: {apt.doctor}
-                                </p>
-                              </div>
+                          {columnAppointments.length === 0 && (
+                            <div className={`p-6 text-center border border-dashed rounded-xl ${
+                              isDarkMode ? 'border-slate-800 text-slate-600' : 'border-slate-300 text-slate-400'
+                            }`}>
+                              <p className="text-xs">Sin pacientes en esta fase</p>
+                            </div>
+                          )}
+                        </div>
 
-                              {/* Actions Bar inside Card */}
-                              <div className="pt-1 flex items-center justify-between gap-1 text-[11px]">
-                                {patientData ? (
-                                  <button
-                                    onClick={() => setSelectedPatient(patientData)}
-                                    className="text-emerald-500 hover:underline font-bold flex items-center gap-1 cursor-pointer"
-                                  >
-                                    <Clipboard className="w-3.5 h-3.5" />
-                                    Ver Historia
-                                  </button>
-                                ) : (
-                                  <span className="text-slate-500 text-[10px]">Sin Ficha</span>
-                                )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                /* MODE B: TABLET & MOBILE OPTIMIZED LIST VIEW */
+                <div className="space-y-4">
+                  {/* Status Filter Tabs */}
+                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+                    {[
+                      { id: 'todos', label: 'Todas las Citas', icon: '📋' },
+                      { id: 'pendiente', label: '📌 Por Atender', icon: '' },
+                      { id: 'consulta', label: '🩺 En Consulta', icon: '' },
+                      { id: 'tratamiento', label: '💉 En Procedimiento', icon: '' },
+                      { id: 'completada', label: '✅ Finalizadas', icon: '' },
+                    ].map((tab) => {
+                      const count = tab.id === 'todos' 
+                        ? appointmentsList.length 
+                        : appointmentsList.filter(a => a.status === tab.id).length;
 
-                                {/* WhatsApp Button */}
-                                <a
-                                  href={`https://wa.me/${apt.phone.replace(/\D/g,'')}?text=${encodeURIComponent(`Hola ${apt.owner}, te escribimos de VetAmor sobre el estado de la consulta de ${apt.petName}.`)}`}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="text-emerald-400 hover:text-emerald-300 p-1 rounded hover:bg-emerald-950/40 cursor-pointer"
-                                  title="Escribir por WhatsApp"
-                                >
-                                  <MessageSquare className="w-3.5 h-3.5" />
-                                </a>
-                              </div>
+                      return (
+                        <button
+                          key={tab.id}
+                          onClick={() => setStatusFilter(tab.id as any)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-extrabold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer ${
+                            statusFilter === tab.id
+                              ? 'bg-emerald-400 text-slate-950 shadow-sm'
+                              : isDarkMode
+                                ? 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
+                                : 'bg-white text-slate-600 hover:text-slate-900 border border-slate-200'
+                          }`}
+                        >
+                          <span>{tab.label}</span>
+                          <span className={`px-1.5 py-0.2 text-[10px] rounded-full font-mono ${
+                            statusFilter === tab.id ? 'bg-slate-950 text-emerald-400' : 'bg-slate-800/20'
+                          }`}>
+                            {count}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
 
-                              {/* Move Status Dropdown / Quick Buttons */}
-                              <div className="pt-2 border-t border-slate-800/60 flex items-center justify-between">
-                                <span className={`text-[10px] ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>Mover a:</span>
-                                <div className="flex items-center gap-1">
-                                  {column.id !== 'pendiente' && (
-                                    <button
-                                      onClick={() => moveAppointmentStatus(apt.id, 'pendiente')}
-                                      className="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] cursor-pointer"
-                                      title="Mover a Por Atender"
-                                    >
-                                      📌
-                                    </button>
-                                  )}
-                                  {column.id !== 'consulta' && (
-                                    <button
-                                      onClick={() => moveAppointmentStatus(apt.id, 'consulta')}
-                                      className="px-1.5 py-0.5 rounded bg-sky-900/60 hover:bg-sky-800 text-sky-200 text-[10px] cursor-pointer"
-                                      title="Mover a En Consulta"
-                                    >
-                                      🩺
-                                    </button>
-                                  )}
-                                  {column.id !== 'tratamiento' && (
-                                    <button
-                                      onClick={() => moveAppointmentStatus(apt.id, 'tratamiento')}
-                                      className="px-1.5 py-0.5 rounded bg-amber-900/60 hover:bg-amber-800 text-amber-200 text-[10px] cursor-pointer"
-                                      title="Mover a Procedimiento"
-                                    >
-                                      💉
-                                    </button>
-                                  )}
-                                  {column.id !== 'completada' && (
-                                    <button
-                                      onClick={() => moveAppointmentStatus(apt.id, 'completada')}
-                                      className="px-1.5 py-0.5 rounded bg-emerald-900/60 hover:bg-emerald-800 text-emerald-200 text-[10px] cursor-pointer"
-                                      title="Mover a Completada"
-                                    >
-                                      ✅
-                                    </button>
-                                  )}
+                  {/* Tablet & Mobile Grid Cards */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {appointmentsList
+                      .filter(apt => {
+                        const matchesSearch = apt.petName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                              apt.owner.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                              apt.service.toLowerCase().includes(searchTerm.toLowerCase());
+                        const matchesStatus = statusFilter === 'todos' || apt.status === statusFilter;
+                        return matchesSearch && matchesStatus;
+                      })
+                      .map((apt) => {
+                        const patientData = patientsList.find(p => p.name.toLowerCase() === apt.petName.toLowerCase());
+
+                        return (
+                          <div
+                            key={apt.id}
+                            className={`p-4 rounded-2xl border shadow-sm space-y-3 transition-all ${
+                              isDarkMode 
+                                ? 'bg-slate-900/90 border-slate-800 text-slate-100 hover:border-slate-700' 
+                                : 'bg-white border-slate-200 text-slate-800 hover:border-slate-300'
+                            }`}
+                          >
+                            {/* Card Top */}
+                            <div className="flex items-center justify-between gap-2 border-b pb-3 border-slate-800/40">
+                              <div className="flex items-center gap-3">
+                                <span className="text-3xl p-2 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">{apt.avatar}</span>
+                                <div>
+                                  <h3 className="font-black text-base flex items-center gap-1.5">
+                                    <span>{apt.petName}</span>
+                                    <span className="text-xs text-emerald-500 font-normal">({apt.species})</span>
+                                  </h3>
+                                  <p className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                                    Propietario: <strong>{apt.owner}</strong>
+                                  </p>
                                 </div>
                               </div>
-
+                              <span className="font-mono text-xs font-black text-emerald-400 bg-emerald-950/60 border border-emerald-800/80 px-2.5 py-1 rounded-xl">
+                                {apt.time}
+                              </span>
                             </div>
-                          );
-                        })}
 
-                        {columnAppointments.length === 0 && (
-                          <div className={`p-6 text-center border border-dashed rounded-xl ${
-                            isDarkMode ? 'border-slate-800 text-slate-600' : 'border-slate-300 text-slate-400'
-                          }`}>
-                            <p className="text-xs">Sin pacientes en esta fase</p>
+                            {/* Service Details */}
+                            <div className={`p-2.5 rounded-xl border text-xs space-y-1 ${
+                              isDarkMode ? 'bg-slate-950/60 border-slate-800' : 'bg-slate-50 border-slate-100'
+                            }`}>
+                              <div className="flex items-center justify-between">
+                                <span className="font-bold text-emerald-400">🩺 {apt.service}</span>
+                                <span className="text-[11px] text-slate-400">{apt.doctor}</span>
+                              </div>
+                              {apt.notes && (
+                                <p className={`text-[11px] italic ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                                  "{apt.notes}"
+                                </p>
+                              )}
+                            </div>
+
+                            {/* Status Change Selector for Tablet */}
+                            <div className="space-y-1.5">
+                              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Estado de la Cita:</label>
+                              <div className="grid grid-cols-2 gap-1.5">
+                                {[
+                                  { id: 'pendiente', label: '📌 Por Atender', color: 'bg-slate-800 text-slate-200 border-slate-700' },
+                                  { id: 'consulta', label: '🩺 En Consulta', color: 'bg-sky-950 text-sky-300 border-sky-800' },
+                                  { id: 'tratamiento', label: '💉 Procedimiento', color: 'bg-amber-950 text-amber-300 border-amber-800' },
+                                  { id: 'completada', label: '✅ Finalizada', color: 'bg-emerald-950 text-emerald-300 border-emerald-800' },
+                                ].map((st) => (
+                                  <button
+                                    key={st.id}
+                                    onClick={() => moveAppointmentStatus(apt.id, st.id as any)}
+                                    className={`px-2 py-1.5 rounded-xl text-[11px] font-bold border text-left transition-all cursor-pointer ${
+                                      apt.status === st.id
+                                        ? `${st.color} ring-2 ring-emerald-400 shadow-xs font-black`
+                                        : isDarkMode 
+                                          ? 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white' 
+                                          : 'bg-slate-100 text-slate-600 border-slate-200'
+                                    }`}
+                                  >
+                                    {st.label}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="pt-2 border-t border-slate-800/40 flex items-center justify-between text-xs">
+                              {patientData ? (
+                                <button
+                                  onClick={() => setSelectedPatient(patientData)}
+                                  className="text-emerald-400 hover:text-emerald-300 font-bold flex items-center gap-1.5 bg-emerald-950/40 px-3 py-1.5 rounded-xl border border-emerald-800/60 cursor-pointer"
+                                >
+                                  <Clipboard className="w-3.5 h-3.5" />
+                                  <span>Ver Historia Clínica</span>
+                                </button>
+                              ) : (
+                                <span className="text-slate-500 text-xs">Sin Ficha</span>
+                              )}
+
+                              <a
+                                href={`https://wa.me/${apt.phone.replace(/\D/g,'')}?text=${encodeURIComponent(`Hola ${apt.owner}, te escribimos de VetAmor sobre el estado de la consulta de ${apt.petName}.`)}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
+                              >
+                                <MessageSquare className="w-3.5 h-3.5" />
+                                <span>WhatsApp</span>
+                              </a>
+                            </div>
+
                           </div>
-                        )}
-                      </div>
+                        );
+                      })}
+                  </div>
+                </div>
+              )}
 
-                    </div>
-                  );
-                })}
-              </div>
             </div>
           )}
 
