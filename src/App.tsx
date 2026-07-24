@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
 import { ValueProps } from './components/ValueProps';
@@ -12,11 +12,21 @@ import { AppointmentModal } from './components/AppointmentModal';
 import { WhatsAppWidget } from './components/WhatsAppWidget';
 import { MobileBottomBar } from './components/MobileBottomBar';
 import { Footer } from './components/Footer';
+import { AdminCRM } from './components/admin/AdminCRM';
 
 export default function App() {
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [selectedServiceId, setSelectedServiceId] = useState<string | undefined>(undefined);
   const [selectedPetSpecies, setSelectedPetSpecies] = useState<string | undefined>(undefined);
+  const [isAdminView, setIsAdminView] = useState(() => window.location.hash === '#admin');
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      setIsAdminView(window.location.hash === '#admin');
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
 
   const handleOpenBooking = (serviceId?: string, petSpecies?: string) => {
     setSelectedServiceId(serviceId);
@@ -27,6 +37,10 @@ export default function App() {
   const handleCloseBooking = () => {
     setBookingModalOpen(false);
   };
+
+  if (isAdminView) {
+    return <AdminCRM />;
+  }
 
   return (
     <div className="min-h-screen bg-white text-slate-900 font-sans antialiased selection:bg-emerald-100 selection:text-emerald-900 pb-16 md:pb-0">
