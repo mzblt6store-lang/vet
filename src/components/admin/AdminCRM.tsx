@@ -1,27 +1,216 @@
 import React, { useState } from 'react';
 import { 
-  Users, Calendar, Activity, Settings, LogOut, Search, Plus, FileText, 
-  ChevronRight, Bell, Sparkles, CheckCircle2, Clock, AlertTriangle, 
+  Users, Calendar, Activity, LogOut, Search, Plus, FileText, 
+  ChevronRight, CheckCircle2, Clock, AlertTriangle, 
   MessageSquare, Phone, Filter, ShieldCheck, Database, RefreshCw, Send,
-  HeartPulse, Stethoscope, Syringe, Check, ExternalLink, Sun, Moon
+  HeartPulse, Stethoscope, Syringe, Check, ExternalLink, Sun, Moon,
+  LayoutGrid, List, MoveRight, ArrowRight, X, Sparkles, UserCheck, Clipboard
 } from 'lucide-react';
 import { CLINIC_INFO } from '../../data/veterinaryData';
 import { supabase } from '../../lib/supabase';
 
-// Mock Initial Data
-const INITIAL_PATIENTS = [
-  { id: 1, name: 'Luna', species: 'Perro', breed: 'Golden Retriever', owner: 'Carlos Rivera', phone: '+57 300 123 4567', lastVisit: '2023-10-12', status: 'Sano', avatar: '🐕' },
-  { id: 2, name: 'Milo', species: 'Gato', breed: 'Persa', owner: 'Ana Gómez', phone: '+57 311 987 6543', lastVisit: '2023-10-15', status: 'En tratamiento', avatar: '🐈' },
-  { id: 3, name: 'Max', species: 'Perro', breed: 'Bulldog', owner: 'Luis Pérez', phone: '+57 315 456 7890', lastVisit: '2023-10-18', status: 'Sano', avatar: '🐶' },
-  { id: 4, name: 'Bella', species: 'Perro', breed: 'Poodle', owner: 'Marta Díaz', phone: '+57 302 234 5678', lastVisit: '2023-10-20', status: 'Vacunación pendiente', avatar: '🐩' },
-  { id: 5, name: 'Thor', species: 'Gato', breed: 'Siames', owner: 'Jorge Blanco', phone: '+57 320 876 5432', lastVisit: '2023-10-22', status: 'Control pendiente', avatar: '🐱' },
+// Patient Interface with Medical History
+interface MedicalRecord {
+  id: string;
+  date: string;
+  doctor: string;
+  reason: string;
+  diagnosis: string;
+  treatment: string;
+  weightKg?: number;
+  nextCheckup?: string;
+}
+
+interface Patient {
+  id: number;
+  name: string;
+  species: 'Perro' | 'Gato' | 'Otro';
+  breed: string;
+  age: string;
+  weight: string;
+  owner: string;
+  phone: string;
+  email: string;
+  lastVisit: string;
+  status: 'Sano' | 'En tratamiento' | 'Vacunación pendiente' | 'Control pendiente';
+  avatar: string;
+  allergies?: string;
+  vaccinesUpToDate: boolean;
+  history: MedicalRecord[];
+}
+
+interface Appointment {
+  id: number;
+  petName: string;
+  species: string;
+  owner: string;
+  phone: string;
+  service: string;
+  time: string;
+  date: string;
+  status: 'pendiente' | 'consulta' | 'tratamiento' | 'completada';
+  doctor: string;
+  notes?: string;
+  avatar: string;
+}
+
+// Initial Mock Data with rich medical histories
+const INITIAL_PATIENTS: Patient[] = [
+  { 
+    id: 1, 
+    name: 'Luna', 
+    species: 'Perro', 
+    breed: 'Golden Retriever', 
+    age: '3 años',
+    weight: '28.5 kg',
+    owner: 'Carlos Rivera', 
+    phone: '+57 300 123 4567', 
+    email: 'carlos.rivera@gmail.com',
+    lastVisit: '2023-10-12', 
+    status: 'Sano', 
+    avatar: '🐕',
+    allergies: 'Ninguna conocida',
+    vaccinesUpToDate: true,
+    history: [
+      {
+        id: 'h1',
+        date: '2023-10-12',
+        doctor: 'Dra. María Elena',
+        reason: 'Chequeo anual y desparasitación',
+        diagnosis: 'Paciente normopeso, mucosas rosadas, excelente estado general.',
+        treatment: 'Aplica Simparica Trio 20-40kg. Próxima vacuna en 12 meses.',
+        weightKg: 28.5,
+        nextCheckup: '2024-10-12'
+      },
+      {
+        id: 'h0',
+        date: '2022-10-10',
+        doctor: 'Dr. Alejandro',
+        reason: 'Vacunación Séxtuple y Rabia',
+        diagnosis: 'Examen físico sin alteraciones. Refuerzos aplicados.',
+        treatment: 'Vacuna Nobivac DHPPi + Rabia.',
+        weightKg: 26.0
+      }
+    ]
+  },
+  { 
+    id: 2, 
+    name: 'Milo', 
+    species: 'Gato', 
+    breed: 'Persa', 
+    age: '2 años',
+    weight: '4.2 kg',
+    owner: 'Ana Gómez', 
+    phone: '+57 311 987 6543', 
+    email: 'ana.gomez@hotmail.com',
+    lastVisit: '2023-10-15', 
+    status: 'En tratamiento', 
+    avatar: '🐈',
+    allergies: 'Sensibilidad a granos',
+    vaccinesUpToDate: true,
+    history: [
+      {
+        id: 'h2',
+        date: '2023-10-15',
+        doctor: 'Dr. Alejandro',
+        reason: 'Gingivitis leve y dermatitis felina',
+        diagnosis: 'Eritema lingual moderado. Probables pulgas o alergia alimentaria.',
+        treatment: 'Antiséptico bucal GelPet + alimento hipoalergénico Royal Canin Sensitivity.',
+        weightKg: 4.2,
+        nextCheckup: '2023-11-01'
+      }
+    ]
+  },
+  { 
+    id: 3, 
+    name: 'Max', 
+    species: 'Perro', 
+    breed: 'Bulldog Francés', 
+    age: '4 años',
+    weight: '12.8 kg',
+    owner: 'Luis Pérez', 
+    phone: '+57 315 456 7890', 
+    email: 'luis.perez@yahoo.com',
+    lastVisit: '2023-10-18', 
+    status: 'Sano', 
+    avatar: '🐶',
+    allergies: 'Polen y humedad',
+    vaccinesUpToDate: true,
+    history: [
+      {
+        id: 'h3',
+        date: '2023-10-18',
+        doctor: 'Dra. María Elena',
+        reason: 'Limpieza de oídos y uñas',
+        diagnosis: 'Conducto auditivo limpio. Otitis descartada.',
+        treatment: 'Limpiador auricular EpiOtic 2 veces por semana.',
+        weightKg: 12.8
+      }
+    ]
+  },
+  { 
+    id: 4, 
+    name: 'Bella', 
+    species: 'Perro', 
+    breed: 'Poodle Toy', 
+    age: '1 año',
+    weight: '3.5 kg',
+    owner: 'Marta Díaz', 
+    phone: '+57 302 234 5678', 
+    email: 'marta.diaz@outlook.com',
+    lastVisit: '2023-10-20', 
+    status: 'Vacunación pendiente', 
+    avatar: '🐩',
+    allergies: 'Ninguna',
+    vaccinesUpToDate: false,
+    history: [
+      {
+        id: 'h4',
+        date: '2023-10-20',
+        doctor: 'Dr. Alejandro',
+        reason: 'Primera valoración Cachorro/Joven',
+        diagnosis: 'Paciente saludable. Pendiente esquema de Rabia.',
+        treatment: 'Agendada cita de vacunación para la próxima semana.',
+        weightKg: 3.5,
+        nextCheckup: '2023-11-05'
+      }
+    ]
+  },
+  { 
+    id: 5, 
+    name: 'Thor', 
+    species: 'Gato', 
+    breed: 'Siamés', 
+    age: '5 años',
+    weight: '5.1 kg',
+    owner: 'Jorge Blanco', 
+    phone: '+57 320 876 5432', 
+    email: 'jorge.blanco@gmail.com',
+    lastVisit: '2023-10-22', 
+    status: 'Control pendiente', 
+    avatar: '🐱',
+    allergies: 'Ninguna',
+    vaccinesUpToDate: true,
+    history: [
+      {
+        id: 'h5',
+        date: '2023-10-22',
+        doctor: 'Dra. María Elena',
+        reason: 'Ecografía renal de control',
+        diagnosis: 'Riñones de ecogenicidad normal. Sin presencia de cálculos.',
+        treatment: 'Mantener hidratación constante y alimento húmedo.',
+        weightKg: 5.1
+      }
+    ]
+  }
 ];
 
-const INITIAL_APPOINTMENTS = [
-  { id: 101, petName: 'Luna', owner: 'Carlos Rivera', service: 'Consulta General', time: '09:00 AM', status: 'Completada', doctor: 'Dra. María Elena' },
-  { id: 102, petName: 'Milo', owner: 'Ana Gómez', service: 'Vacunación Rabia', time: '10:30 AM', status: 'En curso', doctor: 'Dr. Alejandro' },
-  { id: 103, petName: 'Thor', owner: 'Jorge Blanco', service: 'Ecografía de control', time: '02:00 PM', status: 'Confirmada', doctor: 'Dra. María Elena' },
-  { id: 104, petName: 'Bella', owner: 'Marta Díaz', service: 'Profilaxis Dental', time: '04:15 PM', status: 'Pendiente', doctor: 'Dr. Alejandro' },
+const INITIAL_APPOINTMENTS: Appointment[] = [
+  { id: 101, petName: 'Luna', species: 'Perro', owner: 'Carlos Rivera', phone: '+57 300 123 4567', service: 'Consulta General', time: '09:00 AM', date: 'Hoy', status: 'completada', doctor: 'Dra. María Elena', notes: 'Revisión periódica OK.', avatar: '🐕' },
+  { id: 102, petName: 'Milo', species: 'Gato', owner: 'Ana Gómez', phone: '+57 311 987 6543', service: 'Vacunación Rabia', time: '10:30 AM', date: 'Hoy', status: 'tratamiento', doctor: 'Dr. Alejandro', notes: 'Aplicación de vacunas y desparasitación.', avatar: '🐈' },
+  { id: 103, petName: 'Thor', species: 'Gato', owner: 'Jorge Blanco', phone: '+57 320 876 5432', service: 'Ecografía de control', time: '02:00 PM', date: 'Hoy', status: 'consulta', doctor: 'Dra. María Elena', notes: 'En sala de ecografía.', avatar: '🐱' },
+  { id: 104, petName: 'Bella', species: 'Perro', owner: 'Marta Díaz', phone: '+57 302 234 5678', service: 'Profilaxis Dental', time: '04:15 PM', date: 'Hoy', status: 'pendiente', doctor: 'Dr. Alejandro', notes: 'Llegada programada.', avatar: '🐩' },
+  { id: 105, petName: 'Max', species: 'Perro', owner: 'Luis Pérez', phone: '+57 315 456 7890', service: 'Control Dermatólogo', time: '05:30 PM', date: 'Hoy', status: 'pendiente', doctor: 'Dra. María Elena', notes: 'Segunda valoración.', avatar: '🐶' }
 ];
 
 interface AdminCRMProps {
@@ -30,23 +219,42 @@ interface AdminCRMProps {
 
 export const AdminCRM: React.FC<AdminCRMProps> = ({ onLogout }) => {
   const [isDarkMode, setIsDarkMode] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'patients' | 'appointments' | 'integrations'>('overview');
+  const [activeTab, setActiveTab] = useState<'kanban' | 'patients' | 'appointments_list' | 'integrations'>('kanban');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSpecies, setSelectedSpecies] = useState('todos');
-  const [patientsList, setPatientsList] = useState(INITIAL_PATIENTS);
-  const [appointmentsList, setAppointmentsList] = useState(INITIAL_APPOINTMENTS);
   
-  // New Patient Modal state
+  const [patientsList, setPatientsList] = useState<Patient[]>(INITIAL_PATIENTS);
+  const [appointmentsList, setAppointmentsList] = useState<Appointment[]>(INITIAL_APPOINTMENTS);
+  
+  // Selected Patient for Medical History Drawer / Modal
+  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+
+  // New Medical Consultation Entry Form inside Modal
+  const [isAddingHistoryNote, setIsAddingHistoryNote] = useState(false);
+  const [newConsultation, setNewConsultation] = useState({
+    reason: '',
+    diagnosis: '',
+    treatment: '',
+    doctor: 'Dra. María Elena',
+    weightKg: '',
+    nextCheckup: ''
+  });
+
+  // Modal to Register New Patient
   const [isAddPatientOpen, setIsAddPatientOpen] = useState(false);
   const [newPatient, setNewPatient] = useState({
     name: '',
-    species: 'Perro',
+    species: 'Perro' as 'Perro' | 'Gato' | 'Otro',
     breed: '',
+    age: '2 años',
+    weight: '10 kg',
     owner: '',
     phone: '',
+    email: '',
+    allergies: ''
   });
 
-  // Notification Toast in Admin
+  // Toast notifications
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const showAdminToast = (msg: string) => {
@@ -63,28 +271,87 @@ export const AdminCRM: React.FC<AdminCRMProps> = ({ onLogout }) => {
     window.location.href = '/';
   };
 
+  // Move appointment column in Kanban
+  const moveAppointmentStatus = (appointmentId: number, newStatus: Appointment['status']) => {
+    setAppointmentsList(prev => prev.map(apt => {
+      if (apt.id === appointmentId) {
+        return { ...apt, status: newStatus };
+      }
+      return apt;
+    }));
+    showAdminToast(`Cita actualizada a estado "${newStatus.toUpperCase()}"`);
+  };
+
+  // Submit New Medical Consultation to Patient History
+  const handleAddConsultationSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedPatient || !newConsultation.reason || !newConsultation.diagnosis) return;
+
+    const newRecord: MedicalRecord = {
+      id: `h_${Date.now()}`,
+      date: new Date().toISOString().split('T')[0],
+      doctor: newConsultation.doctor,
+      reason: newConsultation.reason,
+      diagnosis: newConsultation.diagnosis,
+      treatment: newConsultation.treatment || 'Sin prescripción específica.',
+      weightKg: newConsultation.weightKg ? parseFloat(newConsultation.weightKg) : undefined,
+      nextCheckup: newConsultation.nextCheckup || undefined
+    };
+
+    const updatedPatient: Patient = {
+      ...selectedPatient,
+      lastVisit: newRecord.date,
+      weight: newRecord.weightKg ? `${newRecord.weightKg} kg` : selectedPatient.weight,
+      history: [newRecord, ...selectedPatient.history]
+    };
+
+    setPatientsList(prev => prev.map(p => p.id === selectedPatient.id ? updatedPatient : p));
+    setSelectedPatient(updatedPatient);
+    setIsAddingHistoryNote(false);
+    setNewConsultation({ reason: '', diagnosis: '', treatment: '', doctor: 'Dra. María Elena', weightKg: '', nextCheckup: '' });
+    showAdminToast(`¡Nueva historia clínica registrada para ${selectedPatient.name}!`);
+  };
+
+  // Register New Patient Submit
   const handleAddPatientSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newPatient.name || !newPatient.owner) return;
 
-    const created = {
+    const created: Patient = {
       id: Date.now(),
       name: newPatient.name,
       species: newPatient.species,
       breed: newPatient.breed || 'Mestizo',
+      age: newPatient.age || '1 año',
+      weight: newPatient.weight || '5 kg',
       owner: newPatient.owner,
       phone: newPatient.phone || '+57 300 000 0000',
+      email: newPatient.email || 'cliente@vetamor.com',
       lastVisit: new Date().toISOString().split('T')[0],
       status: 'Sano',
-      avatar: newPatient.species === 'Perro' ? '🐶' : '🐱',
+      avatar: newPatient.species === 'Perro' ? '🐶' : newPatient.species === 'Gato' ? '🐱' : '🐰',
+      allergies: newPatient.allergies || 'Sin registrar',
+      vaccinesUpToDate: true,
+      history: [
+        {
+          id: `h_init_${Date.now()}`,
+          date: new Date().toISOString().split('T')[0],
+          doctor: 'Dra. María Elena',
+          reason: 'Apertura de Historia Clínica',
+          diagnosis: 'Paciente ingresa por primera vez a la clínica VetAmor. Estado fisiológico normal.',
+          treatment: 'Apertura de ficha médica.',
+          weightKg: parseFloat(newPatient.weight) || 5
+        }
+      ]
     };
 
     setPatientsList([created, ...patientsList]);
     setIsAddPatientOpen(false);
-    setNewPatient({ name: '', species: 'Perro', breed: '', owner: '', phone: '' });
-    showAdminToast(`¡Mascota ${created.name} registrada correctamente!`);
+    setNewPatient({ name: '', species: 'Perro', breed: '', age: '2 años', weight: '10 kg', owner: '', phone: '', email: '', allergies: '' });
+    showAdminToast(`¡Paciente ${created.name} creado correctamente con Historia Clínica!`);
   };
 
+  // Filter Patients
   const filteredPatients = patientsList.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           p.owner.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -93,16 +360,24 @@ export const AdminCRM: React.FC<AdminCRMProps> = ({ onLogout }) => {
     return matchesSearch && matchesSpecies;
   });
 
+  // Kanban Columns Definition
+  const KANBAN_COLUMNS = [
+    { id: 'pendiente', label: '📌 Por Atender', bg: 'border-slate-800', headerBg: 'bg-slate-800/40 text-slate-300' },
+    { id: 'consulta', label: '🩺 En Consulta / Triaje', bg: 'border-sky-800', headerBg: 'bg-sky-950/60 text-sky-300 border-sky-800' },
+    { id: 'tratamiento', label: '💉 En Procedimiento / Lab', bg: 'border-amber-800', headerBg: 'bg-amber-950/60 text-amber-300 border-amber-800' },
+    { id: 'completada', label: '✅ Consulta Finalizada', bg: 'border-emerald-800', headerBg: 'bg-emerald-950/60 text-emerald-300 border-emerald-800' },
+  ];
+
   return (
     <div className={`min-h-screen flex flex-col md:flex-row font-sans transition-colors duration-300 ${
       isDarkMode 
-        ? 'bg-slate-900 text-slate-100 selection:bg-emerald-500 selection:text-slate-950' 
+        ? 'bg-slate-950 text-slate-100 selection:bg-emerald-500 selection:text-slate-950' 
         : 'bg-slate-50 text-slate-800 selection:bg-emerald-400 selection:text-slate-900'
     }`}>
       
       {/* Toast Alert */}
       {toastMessage && (
-        <div className="fixed top-5 right-5 z-50 bg-emerald-500 text-slate-950 font-bold px-4 py-3 rounded-xl shadow-xl flex items-center gap-2 animate-bounce">
+        <div className="fixed top-5 right-5 z-50 bg-emerald-400 text-slate-950 font-extrabold px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2 animate-bounce border border-emerald-200">
           <CheckCircle2 className="w-5 h-5" />
           <span>{toastMessage}</span>
         </div>
@@ -111,7 +386,7 @@ export const AdminCRM: React.FC<AdminCRMProps> = ({ onLogout }) => {
       {/* Sidebar Navigation */}
       <aside className={`w-full md:w-64 border-r flex-shrink-0 flex flex-col justify-between transition-colors duration-300 ${
         isDarkMode 
-          ? 'bg-slate-950/90 border-slate-800/80' 
+          ? 'bg-slate-900/90 border-slate-800/80' 
           : 'bg-white border-slate-200'
       }`}>
         <div>
@@ -120,69 +395,69 @@ export const AdminCRM: React.FC<AdminCRMProps> = ({ onLogout }) => {
             isDarkMode ? 'border-slate-800/80' : 'border-slate-200'
           }`}>
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center shadow-lg shadow-emerald-950">
-                <HeartPulse className="w-5 h-5 text-slate-950 font-bold" />
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center shadow-lg shadow-emerald-950">
+                <HeartPulse className="w-6 h-6 text-slate-950 font-bold" />
               </div>
               <div>
-                <h1 className={`font-extrabold text-base leading-tight tracking-wide ${
+                <h1 className={`font-black text-base leading-tight tracking-wide ${
                   isDarkMode ? 'text-white' : 'text-slate-900'
-                }`}>VetAmor Admin</h1>
-                <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold uppercase tracking-wider">Gestión Médica</p>
+                }`}>VetAmor CRM</h1>
+                <p className="text-[10px] text-emerald-500 font-bold uppercase tracking-wider">Flujo Kanban & Historias</p>
               </div>
             </div>
           </div>
 
           {/* Navigation Links */}
-          <nav className="p-3 space-y-1">
+          <nav className="p-3 space-y-1.5">
             <button 
-              onClick={() => setActiveTab('overview')}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                activeTab === 'overview' 
-                  ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20' 
+              onClick={() => setActiveTab('kanban')}
+              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
+                activeTab === 'kanban' 
+                  ? 'bg-emerald-400 text-slate-950 shadow-lg shadow-emerald-500/20' 
                   : isDarkMode 
-                    ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-900' 
+                    ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60' 
                     : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
-              <Activity className="w-4 h-4" />
-              Resumen General
+              <LayoutGrid className="w-4 h-4" />
+              Tablero Kanban Citas
             </button>
 
             <button 
               onClick={() => setActiveTab('patients')}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === 'patients' 
-                  ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20' 
+                  ? 'bg-emerald-400 text-slate-950 shadow-lg shadow-emerald-500/20' 
                   : isDarkMode 
-                    ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-900' 
+                    ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60' 
                     : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
               <Users className="w-4 h-4" />
-              Pacientes & Historias
+              Pacientes & Historias ({patientsList.length})
             </button>
 
             <button 
-              onClick={() => setActiveTab('appointments')}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                activeTab === 'appointments' 
-                  ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20' 
+              onClick={() => setActiveTab('appointments_list')}
+              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
+                activeTab === 'appointments_list' 
+                  ? 'bg-emerald-400 text-slate-950 shadow-lg shadow-emerald-500/20' 
                   : isDarkMode 
-                    ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-900' 
+                    ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60' 
                     : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
-              <Calendar className="w-4 h-4" />
-              Agenda de Citas
+              <List className="w-4 h-4" />
+              Lista de Agenda
             </button>
 
             <button 
               onClick={() => setActiveTab('integrations')}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === 'integrations' 
-                  ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20' 
+                  ? 'bg-emerald-400 text-slate-950 shadow-lg shadow-emerald-500/20' 
                   : isDarkMode 
-                    ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-900' 
+                    ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60' 
                     : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
@@ -199,7 +474,7 @@ export const AdminCRM: React.FC<AdminCRMProps> = ({ onLogout }) => {
           <button 
             onClick={handleReturnToSite}
             className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-              isDarkMode ? 'text-slate-400 hover:text-white hover:bg-slate-900' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              isDarkMode ? 'text-slate-400 hover:text-white hover:bg-slate-800' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
             }`}
           >
             <ExternalLink className="w-3.5 h-3.5" />
@@ -207,7 +482,7 @@ export const AdminCRM: React.FC<AdminCRMProps> = ({ onLogout }) => {
           </button>
           <button 
             onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-all cursor-pointer"
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-rose-400 hover:text-rose-500 hover:bg-rose-950/40 transition-all cursor-pointer"
           >
             <LogOut className="w-3.5 h-3.5" />
             Cerrar Sesión
@@ -220,17 +495,17 @@ export const AdminCRM: React.FC<AdminCRMProps> = ({ onLogout }) => {
         
         {/* Top Header Bar */}
         <header className={`border-b h-16 flex items-center justify-between px-6 flex-shrink-0 transition-colors duration-300 ${
-          isDarkMode ? 'bg-slate-950/80 border-slate-800/80' : 'bg-white border-slate-200 shadow-xs'
+          isDarkMode ? 'bg-slate-900/90 border-slate-800/80' : 'bg-white border-slate-200 shadow-xs'
         }`}>
           <div className="flex items-center gap-4 flex-1 max-w-md">
             <div className="relative w-full">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input 
                 type="text" 
-                placeholder="Buscar paciente, raza o propietario..." 
+                placeholder="Buscar paciente, propietario o tratamiento..." 
                 className={`w-full pl-9 pr-4 py-2 border rounded-xl text-xs focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all ${
                   isDarkMode 
-                    ? 'bg-slate-900 border-slate-800 text-white placeholder-slate-500' 
+                    ? 'bg-slate-950 border-slate-800 text-white placeholder-slate-500' 
                     : 'bg-slate-50 border-slate-200 text-slate-800 placeholder-slate-400'
                 }`}
                 value={searchTerm}
@@ -246,7 +521,7 @@ export const AdminCRM: React.FC<AdminCRMProps> = ({ onLogout }) => {
               onClick={() => setIsDarkMode(!isDarkMode)}
               className={`p-2 rounded-xl border transition-all flex items-center gap-1.5 text-xs font-bold cursor-pointer ${
                 isDarkMode 
-                  ? 'bg-slate-900 border-slate-800 text-amber-300 hover:bg-slate-800' 
+                  ? 'bg-slate-950 border-slate-800 text-amber-300 hover:bg-slate-800' 
                   : 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200'
               }`}
               title="Cambiar Modo Claro / Oscuro"
@@ -264,15 +539,6 @@ export const AdminCRM: React.FC<AdminCRMProps> = ({ onLogout }) => {
               )}
             </button>
 
-            <div className={`hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-medium ${
-              isDarkMode 
-                ? 'bg-emerald-950/80 border-emerald-800 text-emerald-300' 
-                : 'bg-emerald-50 border-emerald-200 text-emerald-800'
-            }`}>
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-              Evolution API: Conectado
-            </div>
-
             <button 
               onClick={() => setIsAddPatientOpen(true)}
               className="bg-emerald-400 hover:bg-emerald-300 text-slate-950 px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-md shadow-emerald-500/10 cursor-pointer"
@@ -283,412 +549,565 @@ export const AdminCRM: React.FC<AdminCRMProps> = ({ onLogout }) => {
           </div>
         </header>
 
-        {/* Dynamic Content View */}
+        {/* Dynamic Content Views */}
         <div className="flex-1 overflow-auto p-4 sm:p-6 space-y-6">
-          <div className="max-w-6xl mx-auto space-y-6">
-
-            {/* TAB 1: OVERVIEW DASHBOARD */}
-            {activeTab === 'overview' && (
-              <div className="space-y-6 animate-in fade-in duration-300">
-                
-                {/* Stats Widgets Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className={`border rounded-2xl p-4 flex items-center justify-between transition-colors ${
-                    isDarkMode ? 'bg-slate-950/70 border-slate-800' : 'bg-white border-slate-200 shadow-xs'
-                  }`}>
-                    <div>
-                      <p className={`text-xs font-medium ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Pacientes Registrados</p>
-                      <h3 className={`text-2xl font-black mt-1 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{patientsList.length}</h3>
-                      <p className="text-[10px] text-emerald-500 font-semibold mt-1">+3 esta semana</p>
-                    </div>
-                    <div className="w-11 h-11 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
-                      <Stethoscope className="w-6 h-6" />
-                    </div>
-                  </div>
-
-                  <div className={`border rounded-2xl p-4 flex items-center justify-between transition-colors ${
-                    isDarkMode ? 'bg-slate-950/70 border-slate-800' : 'bg-white border-slate-200 shadow-xs'
-                  }`}>
-                    <div>
-                      <p className={`text-xs font-medium ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Citas Programadas Hoy</p>
-                      <h3 className={`text-2xl font-black mt-1 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{appointmentsList.length}</h3>
-                      <p className="text-[10px] text-amber-500 font-semibold mt-1">2 pendientes de atención</p>
-                    </div>
-                    <div className="w-11 h-11 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center">
-                      <Calendar className="w-6 h-6" />
-                    </div>
-                  </div>
-
-                  <div className={`border rounded-2xl p-4 flex items-center justify-between transition-colors ${
-                    isDarkMode ? 'bg-slate-950/70 border-slate-800' : 'bg-white border-slate-200 shadow-xs'
-                  }`}>
-                    <div>
-                      <p className={`text-xs font-medium ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Vacunación & Control</p>
-                      <h3 className={`text-2xl font-black mt-1 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>2</h3>
-                      <p className="text-[10px] text-rose-500 font-semibold mt-1">Alertas enviadas por WhatsApp</p>
-                    </div>
-                    <div className="w-11 h-11 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center">
-                      <Syringe className="w-6 h-6" />
-                    </div>
-                  </div>
-
-                  <div className={`border rounded-2xl p-4 flex items-center justify-between transition-colors ${
-                    isDarkMode ? 'bg-slate-950/70 border-slate-800' : 'bg-white border-slate-200 shadow-xs'
-                  }`}>
-                    <div>
-                      <p className={`text-xs font-medium ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>WhatsApp OTP Status</p>
-                      <h3 className="text-sm font-bold text-emerald-500 mt-1">Activo (n8n)</h3>
-                      <p className={`text-[10px] mt-1 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Evolution API v2</p>
-                    </div>
-                    <div className="w-11 h-11 rounded-xl bg-teal-500/10 text-teal-500 flex items-center justify-center">
-                      <MessageSquare className="w-6 h-6" />
-                    </div>
-                  </div>
+          
+          {/* VIEW 1: INTERACTIVE KANBAN BOARD */}
+          {activeTab === 'kanban' && (
+            <div className="space-y-4 animate-in fade-in duration-300">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div>
+                  <h2 className={`text-xl font-extrabold flex items-center gap-2 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                    <span>Tablero Kanban de Atención Médica</span>
+                    <Sparkles className="w-5 h-5 text-emerald-400" />
+                  </h2>
+                  <p className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                    Arrastra o cambia el estado de cada paciente en tiempo real según el avance en la clínica.
+                  </p>
                 </div>
 
-                {/* Quick Action Cards */}
-                <div className={`border rounded-2xl p-5 flex flex-col md:flex-row items-center justify-between gap-4 ${
-                  isDarkMode 
-                    ? 'bg-gradient-to-r from-emerald-950/60 to-slate-950 border-emerald-800/60' 
-                    : 'bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-200'
+                <div className={`text-xs px-3 py-1.5 rounded-full border flex items-center gap-2 ${
+                  isDarkMode ? 'bg-emerald-950/60 border-emerald-800 text-emerald-300' : 'bg-emerald-50 border-emerald-200 text-emerald-800'
                 }`}>
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-emerald-500 text-slate-950 flex items-center justify-center font-bold shrink-0 shadow-lg">
-                      <Sparkles className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <h3 className={`font-bold text-base ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
-                        Flujo de Automatización con WhatsApp & Evolution API
-                      </h3>
-                      <p className={`text-xs mt-0.5 ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>
-                        Envía recordatorios de citas y accesos OTP automáticamente directamente desde la consola administrativa.
-                      </p>
-                    </div>
-                  </div>
-                  <button 
-                    onClick={() => setActiveTab('integrations')}
-                    className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl transition-all cursor-pointer shrink-0"
-                  >
-                    Ver Configuración n8n
-                  </button>
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                  Sincronizado con n8n & Evolution API
                 </div>
+              </div>
 
-                {/* Recent Patients Quick Table */}
-                <div className={`border rounded-2xl overflow-hidden p-5 ${
-                  isDarkMode ? 'bg-slate-950/80 border-slate-800' : 'bg-white border-slate-200 shadow-xs'
-                }`}>
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className={`font-bold text-sm flex items-center gap-2 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
-                      <Users className="w-4 h-4 text-emerald-500" />
-                      Mascotas Atendidas Recientemente
-                    </h3>
-                    <button 
-                      onClick={() => setActiveTab('patients')}
-                      className="text-xs text-emerald-500 hover:underline font-semibold cursor-pointer"
+              {/* Kanban Grid Columns */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
+                {KANBAN_COLUMNS.map((column) => {
+                  const columnAppointments = appointmentsList.filter(
+                    apt => apt.status === column.id && 
+                    (apt.petName.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                     apt.owner.toLowerCase().includes(searchTerm.toLowerCase()))
+                  );
+
+                  return (
+                    <div 
+                      key={column.id} 
+                      className={`rounded-2xl border p-3 min-h-[500px] flex flex-col transition-colors ${
+                        isDarkMode ? 'bg-slate-900/60 border-slate-800/80' : 'bg-slate-100/80 border-slate-200'
+                      }`}
                     >
-                      Ver todos &rarr;
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    {patientsList.slice(0, 3).map((p) => (
-                      <div key={p.id} className={`border rounded-xl p-3 flex items-center gap-3 ${
-                        isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-slate-50 border-slate-200'
-                      }`}>
-                        <span className="text-2xl">{p.avatar}</span>
-                        <div className="flex-1 min-w-0">
-                          <h4 className={`font-bold text-xs truncate ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{p.name}</h4>
-                          <p className={`text-[11px] truncate ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>{p.species} • {p.breed}</p>
-                          <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">Dueño: {p.owner}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-              </div>
-            )}
-
-            {/* TAB 2: PACIENTES */}
-            {activeTab === 'patients' && (
-              <div className="space-y-4 animate-in fade-in duration-300">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                  <div>
-                    <h2 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>Directorio de Pacientes</h2>
-                    <p className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Listado de mascotas con historiales y contactos directo por WhatsApp</p>
-                  </div>
-
-                  {/* Species Filter Pills */}
-                  <div className={`flex items-center gap-1.5 p-1 rounded-xl border text-xs ${
-                    isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-white border-slate-200'
-                  }`}>
-                    {['todos', 'perro', 'gato'].map((specie) => (
-                      <button
-                        key={specie}
-                        onClick={() => setSelectedSpecies(specie)}
-                        className={`px-3 py-1 rounded-lg capitalize font-semibold transition-all cursor-pointer ${
-                          selectedSpecies === specie 
-                            ? 'bg-emerald-500 text-slate-950 shadow-xs' 
-                            : isDarkMode 
-                              ? 'text-slate-400 hover:text-white' 
-                              : 'text-slate-600 hover:text-slate-900'
-                        }`}
-                      >
-                        {specie}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Patients Table */}
-                <div className={`rounded-2xl border overflow-hidden shadow-xl ${
-                  isDarkMode ? 'bg-slate-950/80 border-slate-800' : 'bg-white border-slate-200'
-                }`}>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs whitespace-nowrap">
-                      <thead className={`border-b font-semibold ${
-                        isDarkMode ? 'bg-slate-900 border-slate-800 text-slate-400' : 'bg-slate-50 border-slate-200 text-slate-600'
-                      }`}>
-                        <tr>
-                          <th className="px-5 py-3">Mascota</th>
-                          <th className="px-5 py-3">Especie & Raza</th>
-                          <th className="px-5 py-3">Propietario</th>
-                          <th className="px-5 py-3">WhatsApp / Teléfono</th>
-                          <th className="px-5 py-3">Estado</th>
-                          <th className="px-5 py-3 text-right">Acción</th>
-                        </tr>
-                      </thead>
-                      <tbody className={`divide-y ${
-                        isDarkMode ? 'divide-slate-800/60 text-slate-300' : 'divide-slate-200 text-slate-700'
-                      }`}>
-                        {filteredPatients.map((patient) => (
-                          <tr key={patient.id} className={isDarkMode ? 'hover:bg-slate-900/60 transition-colors' : 'hover:bg-slate-50 transition-colors'}>
-                            <td className={`px-5 py-3.5 font-bold flex items-center gap-2 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
-                              <span className="text-lg">{patient.avatar}</span>
-                              <span>{patient.name}</span>
-                            </td>
-                            <td className="px-5 py-3.5">
-                              <span className={`block font-medium ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>{patient.species}</span>
-                              <span className={`text-[10px] ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>{patient.breed}</span>
-                            </td>
-                            <td className="px-5 py-3.5 font-medium">{patient.owner}</td>
-                            <td className="px-5 py-3.5">
-                              <a 
-                                href={`https://wa.me/${patient.phone.replace(/\D/g,'')}?text=${encodeURIComponent(`Hola ${patient.owner}, te contactamos de la Clínica Veterinaria Amor & Huellitas para el seguimiento de ${patient.name}.`)}`}
-                                target="_blank"
-                                rel="noreferrer"
-                                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border transition-colors font-medium text-[11px] ${
-                                  isDarkMode 
-                                    ? 'bg-emerald-950 text-emerald-400 border-emerald-800 hover:bg-emerald-900' 
-                                    : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
-                                }`}
-                              >
-                                <MessageSquare className="w-3 h-3" />
-                                {patient.phone}
-                              </a>
-                            </td>
-                            <td className="px-5 py-3.5">
-                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                                patient.status === 'Sano' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/30' :
-                                patient.status === 'En tratamiento' ? 'bg-amber-500/10 text-amber-500 border border-amber-500/30' :
-                                'bg-rose-500/10 text-rose-500 border border-rose-500/30'
-                              }`}>
-                                {patient.status}
-                              </span>
-                            </td>
-                            <td className="px-5 py-3.5 text-right">
-                              <button 
-                                onClick={() => showAdminToast(`Enviado recordatorio a ${patient.owner}`)}
-                                className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all cursor-pointer ${
-                                  isDarkMode ? 'bg-slate-800 hover:bg-slate-700 text-slate-200' : 'bg-slate-100 hover:bg-slate-200 text-slate-800'
-                                }`}
-                              >
-                                Enviar Notificación
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* TAB 3: AGENDA DE CITAS */}
-            {activeTab === 'appointments' && (
-              <div className="space-y-4 animate-in fade-in duration-300">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>Agenda Médica del Día</h2>
-                    <p className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Control e historial de consultas programadas</p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 gap-3">
-                  {appointmentsList.map((apt) => (
-                    <div key={apt.id} className={`border rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 ${
-                      isDarkMode ? 'bg-slate-950/80 border-slate-800' : 'bg-white border-slate-200 shadow-xs'
-                    }`}>
-                      <div className="flex items-center gap-3">
-                        <div className={`w-12 h-12 rounded-xl border flex items-center justify-center font-mono text-emerald-500 font-bold text-xs shrink-0 ${
-                          isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-emerald-50 border-emerald-100'
-                        }`}>
-                          {apt.time}
-                        </div>
-                        <div>
-                          <h4 className={`font-bold text-sm ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
-                            {apt.petName} — <span className={isDarkMode ? 'text-slate-400 font-normal' : 'text-slate-500 font-normal'}>{apt.service}</span>
-                          </h4>
-                          <p className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
-                            Dueño: <strong className={isDarkMode ? 'text-slate-200' : 'text-slate-900'}>{apt.owner}</strong> • Médico: {apt.doctor}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className={`flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end border-t sm:border-0 pt-3 sm:pt-0 ${
-                        isDarkMode ? 'border-slate-800' : 'border-slate-200'
-                      }`}>
-                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
-                          apt.status === 'Completada' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/30' :
-                          apt.status === 'En curso' ? 'bg-amber-500/10 text-amber-500 border border-amber-500/30' :
-                          'bg-sky-500/10 text-sky-500 border border-sky-500/30'
-                        }`}>
-                          {apt.status}
+                      {/* Column Header */}
+                      <div className={`p-2.5 rounded-xl border font-bold text-xs flex items-center justify-between mb-3 ${column.headerBg}`}>
+                        <span>{column.label}</span>
+                        <span className="w-5 h-5 rounded-full bg-slate-950/30 flex items-center justify-center text-[10px]">
+                          {columnAppointments.length}
                         </span>
-
-                        <button 
-                          onClick={() => {
-                            setAppointmentsList(appointmentsList.map(a => a.id === apt.id ? { ...a, status: 'Completada' } : a));
-                            showAdminToast(`Cita de ${apt.petName} marcada como Completada`);
-                          }}
-                          className={`px-3 py-1.5 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
-                            isDarkMode 
-                              ? 'bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300' 
-                              : 'bg-emerald-100 hover:bg-emerald-200 text-emerald-800'
-                          }`}
-                        >
-                          Marcar Atendida
-                        </button>
                       </div>
+
+                      {/* Column Cards */}
+                      <div className="space-y-3 flex-1 overflow-y-auto">
+                        {columnAppointments.map((apt) => {
+                          const patientData = patientsList.find(p => p.name.toLowerCase() === apt.petName.toLowerCase());
+
+                          return (
+                            <div 
+                              key={apt.id}
+                              className={`p-3.5 rounded-xl border shadow-sm space-y-3 transition-all hover:scale-[1.01] ${
+                                isDarkMode 
+                                  ? 'bg-slate-950 border-slate-800 hover:border-slate-700 text-slate-100' 
+                                  : 'bg-white border-slate-200 hover:border-slate-300 text-slate-900'
+                              }`}
+                            >
+                              {/* Card Top: Pet Info & Time */}
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-2xl">{apt.avatar}</span>
+                                  <div>
+                                    <h4 className="font-extrabold text-sm flex items-center gap-1.5">
+                                      <span>{apt.petName}</span>
+                                      <span className="text-[10px] text-emerald-500 font-normal">({apt.species})</span>
+                                    </h4>
+                                    <p className={`text-[11px] ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                                      Dueño: <strong className={isDarkMode ? 'text-slate-200' : 'text-slate-800'}>{apt.owner}</strong>
+                                    </p>
+                                  </div>
+                                </div>
+                                <span className={`text-[10px] font-mono px-2 py-0.5 rounded-md font-bold border ${
+                                  isDarkMode ? 'bg-slate-900 border-slate-800 text-amber-300' : 'bg-amber-50 border-amber-200 text-amber-800'
+                                }`}>
+                                  {apt.time}
+                                </span>
+                              </div>
+
+                              {/* Service & Notes */}
+                              <div className={`p-2 rounded-lg border text-xs space-y-1 ${
+                                isDarkMode ? 'bg-slate-900/80 border-slate-800/80' : 'bg-slate-50 border-slate-100'
+                              }`}>
+                                <p className="font-bold text-emerald-600 dark:text-emerald-400">🩺 {apt.service}</p>
+                                <p className={`text-[11px] ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                                  Médico: {apt.doctor}
+                                </p>
+                              </div>
+
+                              {/* Actions Bar inside Card */}
+                              <div className="pt-1 flex items-center justify-between gap-1 text-[11px]">
+                                {patientData ? (
+                                  <button
+                                    onClick={() => setSelectedPatient(patientData)}
+                                    className="text-emerald-500 hover:underline font-bold flex items-center gap-1 cursor-pointer"
+                                  >
+                                    <Clipboard className="w-3.5 h-3.5" />
+                                    Ver Historia
+                                  </button>
+                                ) : (
+                                  <span className="text-slate-500 text-[10px]">Sin Ficha</span>
+                                )}
+
+                                {/* WhatsApp Button */}
+                                <a
+                                  href={`https://wa.me/${apt.phone.replace(/\D/g,'')}?text=${encodeURIComponent(`Hola ${apt.owner}, te escribimos de VetAmor sobre el estado de la consulta de ${apt.petName}.`)}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-emerald-400 hover:text-emerald-300 p-1 rounded hover:bg-emerald-950/40 cursor-pointer"
+                                  title="Escribir por WhatsApp"
+                                >
+                                  <MessageSquare className="w-3.5 h-3.5" />
+                                </a>
+                              </div>
+
+                              {/* Move Status Dropdown / Quick Buttons */}
+                              <div className="pt-2 border-t border-slate-800/60 flex items-center justify-between">
+                                <span className={`text-[10px] ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>Mover a:</span>
+                                <div className="flex items-center gap-1">
+                                  {column.id !== 'pendiente' && (
+                                    <button
+                                      onClick={() => moveAppointmentStatus(apt.id, 'pendiente')}
+                                      className="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] cursor-pointer"
+                                      title="Mover a Por Atender"
+                                    >
+                                      📌
+                                    </button>
+                                  )}
+                                  {column.id !== 'consulta' && (
+                                    <button
+                                      onClick={() => moveAppointmentStatus(apt.id, 'consulta')}
+                                      className="px-1.5 py-0.5 rounded bg-sky-900/60 hover:bg-sky-800 text-sky-200 text-[10px] cursor-pointer"
+                                      title="Mover a En Consulta"
+                                    >
+                                      🩺
+                                    </button>
+                                  )}
+                                  {column.id !== 'tratamiento' && (
+                                    <button
+                                      onClick={() => moveAppointmentStatus(apt.id, 'tratamiento')}
+                                      className="px-1.5 py-0.5 rounded bg-amber-900/60 hover:bg-amber-800 text-amber-200 text-[10px] cursor-pointer"
+                                      title="Mover a Procedimiento"
+                                    >
+                                      💉
+                                    </button>
+                                  )}
+                                  {column.id !== 'completada' && (
+                                    <button
+                                      onClick={() => moveAppointmentStatus(apt.id, 'completada')}
+                                      className="px-1.5 py-0.5 rounded bg-emerald-900/60 hover:bg-emerald-800 text-emerald-200 text-[10px] cursor-pointer"
+                                      title="Mover a Completada"
+                                    >
+                                      ✅
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+
+                            </div>
+                          );
+                        })}
+
+                        {columnAppointments.length === 0 && (
+                          <div className={`p-6 text-center border border-dashed rounded-xl ${
+                            isDarkMode ? 'border-slate-800 text-slate-600' : 'border-slate-300 text-slate-400'
+                          }`}>
+                            <p className="text-xs">Sin pacientes en esta fase</p>
+                          </div>
+                        )}
+                      </div>
+
                     </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* VIEW 2: PACIENTES & HISTORIALES CLÍNICOS */}
+          {activeTab === 'patients' && (
+            <div className="space-y-4 animate-in fade-in duration-300">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div>
+                  <h2 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>Directorio de Pacientes & Historias Clínicas</h2>
+                  <p className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Haz clic en cualquier mascota para abrir su expediente veterinario completo.</p>
+                </div>
+
+                {/* Species Filter Pills */}
+                <div className={`flex items-center gap-1.5 p-1 rounded-xl border text-xs ${
+                  isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-white border-slate-200'
+                }`}>
+                  {['todos', 'perro', 'gato'].map((specie) => (
+                    <button
+                      key={specie}
+                      onClick={() => setSelectedSpecies(specie)}
+                      className={`px-3 py-1 rounded-lg capitalize font-semibold transition-all cursor-pointer ${
+                        selectedSpecies === specie 
+                          ? 'bg-emerald-400 text-slate-950 shadow-xs' 
+                          : isDarkMode 
+                            ? 'text-slate-400 hover:text-white' 
+                            : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      {specie}
+                    </button>
                   ))}
                 </div>
               </div>
-            )}
 
-            {/* TAB 4: INTEGRACIONES N8N & EVOLUTION API */}
-            {activeTab === 'integrations' && (
-              <div className="space-y-6 animate-in fade-in duration-300">
-                <div>
-                  <h2 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>Integración con n8n, Evolution API & Supabase</h2>
-                  <p className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Estructura del webhook para autenticación por OTP de WhatsApp e historial de clientes</p>
-                </div>
+              {/* Patients Grid Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredPatients.map((patient) => (
+                  <div 
+                    key={patient.id}
+                    onClick={() => setSelectedPatient(patient)}
+                    className={`p-5 rounded-2xl border transition-all cursor-pointer hover:border-emerald-500 group relative overflow-hidden ${
+                      isDarkMode ? 'bg-slate-900/80 border-slate-800 hover:bg-slate-900' : 'bg-white border-slate-200 hover:shadow-lg'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <span className="text-3xl p-2 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">{patient.avatar}</span>
+                        <div>
+                          <h3 className={`font-black text-base group-hover:text-emerald-400 transition-colors ${
+                            isDarkMode ? 'text-white' : 'text-slate-900'
+                          }`}>
+                            {patient.name}
+                          </h3>
+                          <p className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>{patient.species} • {patient.breed}</p>
+                        </div>
+                      </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Evolution API Card */}
-                  <div className={`border rounded-2xl p-5 space-y-3 ${
-                    isDarkMode ? 'bg-slate-950/80 border-slate-800' : 'bg-white border-slate-200 shadow-xs'
-                  }`}>
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
-                        <MessageSquare className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <h3 className={`font-bold text-sm ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>Evolution API (WhatsApp Gateway)</h3>
-                        <p className={`text-[11px] ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Envío automático de mensajes OTP & Confirmaciones</p>
-                      </div>
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                        patient.status === 'Sano' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' :
+                        patient.status === 'En tratamiento' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30' :
+                        'bg-rose-500/10 text-rose-400 border border-rose-500/30'
+                      }`}>
+                        {patient.status}
+                      </span>
                     </div>
-                    
-                    <div className={`space-y-2 text-xs p-3 rounded-xl border font-mono ${
-                      isDarkMode ? 'bg-slate-900 border-slate-800 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-800'
+
+                    <div className={`mt-4 pt-3 border-t text-xs space-y-1.5 ${
+                      isDarkMode ? 'border-slate-800 text-slate-300' : 'border-slate-100 text-slate-700'
                     }`}>
-                      <p><span className="text-emerald-500 font-bold">POST</span> /message/sendText/vetamor</p>
-                      <p><span className="text-slate-400">Header:</span> apikey: {`{{EVOLUTION_API_KEY}}`}</p>
-                      <p><span className="text-slate-400">Body:</span> {`{"number": "57300...", "text": "Tu código OTP es 123456"}`}</p>
+                      <p className="flex justify-between">
+                        <span className="text-slate-500">Propietario:</span>
+                        <strong className="font-semibold">{patient.owner}</strong>
+                      </p>
+                      <p className="flex justify-between">
+                        <span className="text-slate-500">Edad / Peso:</span>
+                        <span>{patient.age} / {patient.weight}</span>
+                      </p>
+                      <p className="flex justify-between">
+                        <span className="text-slate-500">Atenciones Registradas:</span>
+                        <strong className="text-emerald-400">{patient.history.length} consultas</strong>
+                      </p>
+                    </div>
+
+                    <div className="mt-4 flex items-center justify-between text-xs font-bold text-emerald-500 pt-1">
+                      <span>Ver Expediente Médico completos &rarr;</span>
+                      <Clipboard className="w-4 h-4" />
                     </div>
                   </div>
-
-                  {/* n8n Workflow Card */}
-                  <div className={`border rounded-2xl p-5 space-y-3 ${
-                    isDarkMode ? 'bg-slate-950/80 border-slate-800' : 'bg-white border-slate-200 shadow-xs'
-                  }`}>
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center">
-                        <RefreshCw className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <h3 className={`font-bold text-sm ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>Flujo de Automatización n8n</h3>
-                        <p className={`text-[11px] ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Orquestador de eventos, recordatorios e ingesta de citas</p>
-                      </div>
-                    </div>
-
-                    <ul className={`space-y-1.5 text-xs ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
-                      <li className="flex items-center gap-2">
-                        <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                        <span>Recibe webhook de la cita desde el Portal Web.</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                        <span>Genera y valida el token OTP telefónico.</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                        <span>Sincroniza registros en la base de datos Supabase.</span>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-
-                {/* Supabase Connection Card */}
-                <div className={`border rounded-2xl p-5 ${
-                  isDarkMode ? 'bg-slate-950/80 border-slate-800' : 'bg-white border-slate-200 shadow-xs'
-                }`}>
-                  <h3 className={`font-bold text-sm mb-2 flex items-center gap-2 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
-                    <Database className="w-4 h-4 text-teal-500" />
-                    Estado de Tablas en Supabase
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div className={`border p-3 rounded-xl text-xs ${
-                      isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-slate-50 border-slate-200'
-                    }`}>
-                      <p className="font-mono text-emerald-500 font-bold">pets</p>
-                      <p className={`text-[10px] mt-1 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>id, name, species, breed, owner_id</p>
-                    </div>
-                    <div className={`border p-3 rounded-xl text-xs ${
-                      isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-slate-50 border-slate-200'
-                    }`}>
-                      <p className="font-mono text-emerald-500 font-bold">appointments</p>
-                      <p className={`text-[10px] mt-1 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>id, pet_id, service, date, status</p>
-                    </div>
-                    <div className={`border p-3 rounded-xl text-xs ${
-                      isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-slate-50 border-slate-200'
-                    }`}>
-                      <p className="font-mono text-emerald-500 font-bold">owners</p>
-                      <p className={`text-[10px] mt-1 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>id, name, phone, otp_code</p>
-                    </div>
-                  </div>
-                </div>
-
+                ))}
               </div>
-            )}
+            </div>
+          )}
 
-          </div>
+          {/* VIEW 3: AGENDA LIST VIEW */}
+          {activeTab === 'appointments_list' && (
+            <div className="space-y-4 animate-in fade-in duration-300">
+              <h2 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>Lista de Agenda del Día</h2>
+
+              <div className={`rounded-2xl border overflow-hidden ${
+                isDarkMode ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200'
+              }`}>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs whitespace-nowrap">
+                    <thead className={`border-b font-semibold ${
+                      isDarkMode ? 'bg-slate-950 border-slate-800 text-slate-400' : 'bg-slate-50 border-slate-200 text-slate-600'
+                    }`}>
+                      <tr>
+                        <th className="px-5 py-3">Hora</th>
+                        <th className="px-5 py-3">Mascota</th>
+                        <th className="px-5 py-3">Propietario</th>
+                        <th className="px-5 py-3">Servicio</th>
+                        <th className="px-5 py-3">Médico</th>
+                        <th className="px-5 py-3">Estado</th>
+                        <th className="px-5 py-3 text-right">Acción</th>
+                      </tr>
+                    </thead>
+                    <tbody className={`divide-y ${
+                      isDarkMode ? 'divide-slate-800/60 text-slate-300' : 'divide-slate-200 text-slate-700'
+                    }`}>
+                      {appointmentsList.map((apt) => (
+                        <tr key={apt.id} className={isDarkMode ? 'hover:bg-slate-800/40' : 'hover:bg-slate-50'}>
+                          <td className="px-5 py-3.5 font-mono font-bold text-emerald-400">{apt.time}</td>
+                          <td className="px-5 py-3.5 font-bold text-white flex items-center gap-2">
+                            <span>{apt.avatar}</span>
+                            <span>{apt.petName}</span>
+                          </td>
+                          <td className="px-5 py-3.5">{apt.owner}</td>
+                          <td className="px-5 py-3.5 text-emerald-400 font-semibold">{apt.service}</td>
+                          <td className="px-5 py-3.5">{apt.doctor}</td>
+                          <td className="px-5 py-3.5 capitalize font-bold">{apt.status}</td>
+                          <td className="px-5 py-3.5 text-right">
+                            <button
+                              onClick={() => moveAppointmentStatus(apt.id, 'completada')}
+                              className="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 text-xs hover:bg-emerald-500/30 cursor-pointer"
+                            >
+                              Finalizar
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* VIEW 4: N8N INTEGRATION */}
+          {activeTab === 'integrations' && (
+            <div className="space-y-6 animate-in fade-in duration-300">
+              <div>
+                <h2 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>Integración n8n & Evolution API</h2>
+                <p className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Conexión activa para la automatización de WhatsApp y almacenamiento en Supabase.</p>
+              </div>
+
+              <div className={`p-5 rounded-2xl border space-y-4 ${
+                isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'
+              }`}>
+                <h3 className="font-bold text-sm text-emerald-400">Webhook de Notificación</h3>
+                <div className="p-3 bg-slate-950 rounded-xl text-xs font-mono text-emerald-300 border border-slate-800">
+                  https://n8n.vetamor.com/webhook/whatsapp-otp-notifications
+                </div>
+              </div>
+            </div>
+          )}
+
         </div>
       </main>
 
-      {/* Add Patient Modal */}
+      {/* DETAILED PATIENT MEDICAL HISTORY MODAL */}
+      {selectedPatient && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className={`border rounded-3xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl space-y-6 relative ${
+            isDarkMode ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-900'
+          }`}>
+            {/* Close Button */}
+            <button 
+              onClick={() => { setSelectedPatient(null); setIsAddingHistoryNote(false); }}
+              className={`absolute top-5 right-5 p-2 rounded-full cursor-pointer transition-colors ${
+                isDarkMode ? 'hover:bg-slate-800 text-slate-400 hover:text-white' : 'hover:bg-slate-100 text-slate-600'
+              }`}
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Header: Pet Medical File Header */}
+            <div className="flex items-start gap-4">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 p-0.5 shadow-lg shrink-0">
+                <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center text-3xl">
+                  {selectedPatient.avatar}
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-2xl font-black">{selectedPatient.name}</h2>
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                    {selectedPatient.species}
+                  </span>
+                </div>
+                <p className={`text-xs mt-0.5 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                  Raza: <strong>{selectedPatient.breed}</strong> • Edad: <strong>{selectedPatient.age}</strong> • Peso actual: <strong>{selectedPatient.weight}</strong>
+                </p>
+                <p className="text-xs text-emerald-500 mt-1">
+                  Propietario: <strong>{selectedPatient.owner}</strong> ({selectedPatient.phone})
+                </p>
+              </div>
+            </div>
+
+            {/* Quick Health Tags */}
+            <div className={`p-3 rounded-2xl border grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs ${
+              isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'
+            }`}>
+              <div>
+                <span className="text-slate-500 text-[11px] block">Alergias:</span>
+                <span className="font-semibold text-rose-400">{selectedPatient.allergies || 'Ninguna'}</span>
+              </div>
+              <div>
+                <span className="text-slate-500 text-[11px] block">Vacunas al día:</span>
+                <span className="font-semibold text-emerald-400">
+                  {selectedPatient.vaccinesUpToDate ? 'Sí ✓' : 'Pendiente ⚠️'}
+                </span>
+              </div>
+              <div>
+                <span className="text-slate-500 text-[11px] block">Última Atención:</span>
+                <span className="font-semibold">{selectedPatient.lastVisit}</span>
+              </div>
+            </div>
+
+            {/* Add New Medical Consultation Entry Button */}
+            {!isAddingHistoryNote ? (
+              <div className="flex justify-between items-center pt-2">
+                <h3 className="font-bold text-base flex items-center gap-2">
+                  <Clipboard className="w-5 h-5 text-emerald-400" />
+                  Historial de Evolución Médica
+                </h3>
+                <button
+                  onClick={() => setIsAddingHistoryNote(true)}
+                  className="px-3.5 py-2 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-md"
+                >
+                  <Plus className="w-4 h-4" />
+                  Nueva Consulta / Evolución
+                </button>
+              </div>
+            ) : (
+              /* FORM TO ADD NEW MEDICAL RECORD */
+              <form onSubmit={handleAddConsultationSubmit} className={`p-4 rounded-2xl border space-y-3 animate-in fade-in ${
+                isDarkMode ? 'bg-slate-950 border-emerald-800/80' : 'bg-emerald-50/50 border-emerald-200'
+              }`}>
+                <h4 className="font-bold text-sm text-emerald-400 flex items-center justify-between">
+                  <span>Registrar Nueva Atención Médica</span>
+                  <button 
+                    type="button" 
+                    onClick={() => setIsAddingHistoryNote(false)}
+                    className="text-xs text-slate-400 hover:text-white"
+                  >
+                    Cancelar
+                  </button>
+                </h4>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-bold mb-1">Motivo de Consulta</label>
+                    <input 
+                      type="text" 
+                      required
+                      placeholder="Ej: Vacunación, Alergia bucal..." 
+                      value={newConsultation.reason}
+                      onChange={(e) => setNewConsultation({ ...newConsultation, reason: e.target.value })}
+                      className={`w-full p-2 rounded-xl border text-xs outline-none ${
+                        isDarkMode ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white border-slate-300'
+                      }`}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold mb-1">Peso Registrado (kg)</label>
+                    <input 
+                      type="number" 
+                      step="0.1"
+                      placeholder="Ej: 28.5" 
+                      value={newConsultation.weightKg}
+                      onChange={(e) => setNewConsultation({ ...newConsultation, weightKg: e.target.value })}
+                      className={`w-full p-2 rounded-xl border text-xs outline-none ${
+                        isDarkMode ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white border-slate-300'
+                      }`}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold mb-1">Diagnóstico Veterinario</label>
+                  <textarea 
+                    required
+                    rows={2}
+                    placeholder="Escribe el diagnóstico clínico detallado..." 
+                    value={newConsultation.diagnosis}
+                    onChange={(e) => setNewConsultation({ ...newConsultation, diagnosis: e.target.value })}
+                    className={`w-full p-2 rounded-xl border text-xs outline-none ${
+                      isDarkMode ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white border-slate-300'
+                    }`}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold mb-1">Tratamiento & Prescripción</label>
+                  <textarea 
+                    rows={2}
+                    placeholder="Medicamentos, dosis y recomendaciones..." 
+                    value={newConsultation.treatment}
+                    onChange={(e) => setNewConsultation({ ...newConsultation, treatment: e.target.value })}
+                    className={`w-full p-2 rounded-xl border text-xs outline-none ${
+                      isDarkMode ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white border-slate-300'
+                    }`}
+                  />
+                </div>
+
+                <button 
+                  type="submit"
+                  className="w-full py-2.5 rounded-xl bg-emerald-400 text-slate-950 font-bold text-xs hover:bg-emerald-300 cursor-pointer shadow-md"
+                >
+                  Guardar en Historia Clínica
+                </button>
+              </form>
+            )}
+
+            {/* Medical Records Timeline */}
+            <div className="space-y-4 relative before:absolute before:inset-0 before:left-3.5 before:w-0.5 before:bg-slate-800">
+              {selectedPatient.history.map((record) => (
+                <div key={record.id} className="relative pl-8 space-y-1">
+                  <div className="absolute left-1.5 top-1.5 w-4 h-4 rounded-full bg-emerald-400 border-4 border-slate-900"></div>
+
+                  <div className={`p-4 rounded-2xl border space-y-2 ${
+                    isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'
+                  }`}>
+                    <div className="flex items-center justify-between text-xs font-bold">
+                      <span className="text-emerald-400">{record.reason}</span>
+                      <span className="text-slate-400">{record.date}</span>
+                    </div>
+
+                    <p className={`text-xs ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
+                      <strong>Diagnóstico:</strong> {record.diagnosis}
+                    </p>
+
+                    <div className={`p-2.5 rounded-xl text-xs font-mono ${
+                      isDarkMode ? 'bg-slate-900 text-slate-300 border border-slate-800' : 'bg-white text-slate-800 border border-slate-200'
+                    }`}>
+                      <span className="text-emerald-500 font-bold">Tratamiento/Receta: </span>
+                      {record.treatment}
+                    </div>
+
+                    <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1">
+                      <span>Atendido por: {record.doctor}</span>
+                      {record.weightKg && <span>Peso: {record.weightKg} kg</span>}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: NEW PATIENT REGISTRATION */}
       {isAddPatientOpen && (
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className={`border rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4 ${
             isDarkMode ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-900'
           }`}>
-            <h3 className="text-lg font-bold">Registrar Nueva Mascota</h3>
+            <h3 className="text-lg font-extrabold flex items-center justify-between">
+              <span>Registrar Nueva Mascota</span>
+              <button onClick={() => setIsAddPatientOpen(false)} className="text-slate-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </h3>
+
             <form onSubmit={handleAddPatientSubmit} className="space-y-3">
               <div>
-                <label className={`block text-xs font-semibold mb-1 ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
-                  Nombre de la Mascota
-                </label>
+                <label className="block text-xs font-semibold mb-1">Nombre de la Mascota</label>
                 <input 
                   type="text" 
                   required
@@ -703,20 +1122,21 @@ export const AdminCRM: React.FC<AdminCRMProps> = ({ onLogout }) => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className={`block text-xs font-semibold mb-1 ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>Especie</label>
+                  <label className="block text-xs font-semibold mb-1">Especie</label>
                   <select 
                     value={newPatient.species}
-                    onChange={(e) => setNewPatient({ ...newPatient, species: e.target.value })}
+                    onChange={(e) => setNewPatient({ ...newPatient, species: e.target.value as any })}
                     className={`w-full border rounded-xl px-3 py-2 text-xs outline-none focus:border-emerald-500 ${
                       isDarkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'
                     }`}
                   >
                     <option value="Perro">Perro 🐶</option>
                     <option value="Gato">Gato 🐱</option>
+                    <option value="Otro">Otro 🐰</option>
                   </select>
                 </div>
                 <div>
-                  <label className={`block text-xs font-semibold mb-1 ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>Raza</label>
+                  <label className="block text-xs font-semibold mb-1">Raza</label>
                   <input 
                     type="text" 
                     value={newPatient.breed} 
@@ -730,7 +1150,7 @@ export const AdminCRM: React.FC<AdminCRMProps> = ({ onLogout }) => {
               </div>
 
               <div>
-                <label className={`block text-xs font-semibold mb-1 ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>Propietario / Dueño</label>
+                <label className="block text-xs font-semibold mb-1">Propietario / Dueño</label>
                 <input 
                   type="text" 
                   required
@@ -744,7 +1164,7 @@ export const AdminCRM: React.FC<AdminCRMProps> = ({ onLogout }) => {
               </div>
 
               <div>
-                <label className={`block text-xs font-semibold mb-1 ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>WhatsApp / Teléfono</label>
+                <label className="block text-xs font-semibold mb-1">WhatsApp / Teléfono</label>
                 <input 
                   type="tel" 
                   value={newPatient.phone} 
@@ -768,9 +1188,9 @@ export const AdminCRM: React.FC<AdminCRMProps> = ({ onLogout }) => {
                 </button>
                 <button 
                   type="submit" 
-                  className="w-1/2 py-2 rounded-xl bg-emerald-500 text-slate-950 font-bold text-xs hover:bg-emerald-400 cursor-pointer"
+                  className="w-1/2 py-2 rounded-xl bg-emerald-400 text-slate-950 font-bold text-xs hover:bg-emerald-300 cursor-pointer shadow-md"
                 >
-                  Guardar Mascota
+                  Crear Ficha Médica
                 </button>
               </div>
             </form>
