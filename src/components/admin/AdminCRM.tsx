@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Users, Calendar, Activity, Settings, LogOut, Search, Plus, FileText, ChevronRight, Bell } from 'lucide-react';
 import { CLINIC_INFO } from '../../data/veterinaryData';
+import { supabase } from '../../lib/supabase';
 
 // Placeholder Mock Data (Will be replaced by Supabase)
 const MOCK_PATIENTS = [
@@ -10,9 +11,20 @@ const MOCK_PATIENTS = [
   { id: 4, name: 'Bella', species: 'Perro', breed: 'Poodle', owner: 'Marta Díaz', lastVisit: '2023-10-20', status: 'Vacunación pendiente' },
 ];
 
-export const AdminCRM: React.FC = () => {
+interface AdminCRMProps {
+  onLogout: () => void;
+}
+
+export const AdminCRM: React.FC<AdminCRMProps> = ({ onLogout }) => {
   const [activeTab, setActiveTab] = useState('patients');
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Handle Logout
+  const handleLogout = async () => {
+    // Intentamos cerrar sesión en Supabase (no afectará si es la sesión de prueba)
+    await supabase.auth.signOut();
+    onLogout();
+  };
 
   // Handle Return to Site
   const handleReturnToSite = () => {
@@ -65,13 +77,19 @@ export const AdminCRM: React.FC = () => {
           </button>
         </nav>
 
-        <div className="p-4 border-t border-slate-100">
+        <div className="p-4 border-t border-slate-100 space-y-2">
           <button 
             onClick={handleReturnToSite}
             className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-slate-500 hover:bg-slate-100 transition-colors"
           >
-            <LogOut className="w-4 h-4" />
             Volver a la Web
+          </button>
+          <button 
+            onClick={handleLogout}
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-rose-600 hover:bg-rose-50 transition-colors"
+          >
+            <LogOut className="w-4 h-4" />
+            Cerrar Sesión
           </button>
         </div>
       </aside>

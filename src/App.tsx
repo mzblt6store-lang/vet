@@ -13,6 +13,8 @@ import { WhatsAppWidget } from './components/WhatsAppWidget';
 import { MobileBottomBar } from './components/MobileBottomBar';
 import { Footer } from './components/Footer';
 import { AdminCRM } from './components/admin/AdminCRM';
+import { AdminLogin } from './components/admin/AdminLogin';
+import { supabase } from './lib/supabase';
 
 export default function App() {
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
@@ -21,6 +23,7 @@ export default function App() {
   const [isAdminView, setIsAdminView] = useState(() => 
     window.location.hash === '#admin' || window.location.pathname === '/admin'
   );
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
     const handleLocationChange = () => {
@@ -28,9 +31,22 @@ export default function App() {
     };
     window.addEventListener('hashchange', handleLocationChange);
     window.addEventListener('popstate', handleLocationChange);
+    
+    // Check initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        setIsAuthenticated(true);
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(!!session);
+    });
+
     return () => {
       window.removeEventListener('hashchange', handleLocationChange);
       window.removeEventListener('popstate', handleLocationChange);
+      subscription.unsubscribe();
     };
   }, []);
 
@@ -45,7 +61,10 @@ export default function App() {
   };
 
   if (isAdminView) {
-    return <AdminCRM />;
+    if (isAuthenticated) {
+      return <AdminCRM onLogout={() => setIsAuthenticated(false)} />;
+    }
+    return <AdminLogin onLogin={() => setIsAuthenticated(true)} />;
   }
 
   return (
