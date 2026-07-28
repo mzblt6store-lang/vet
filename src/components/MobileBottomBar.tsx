@@ -48,7 +48,7 @@ export const MobileBottomBar: React.FC<MobileBottomBarProps> = ({ onOpenBooking 
           <div className="w-9 h-9 rounded-full bg-orange-600 text-white flex items-center justify-center mb-0.5">
             <Calendar className="w-4 h-4" />
           </div>
-          <span className="text-[10px] font-bold leading-none">Cita Clic</span>
+          <span className="text-[10px] font-bold leading-none">Cita WhatsApp</span>
         </button>
 
         {/* 1-Tap Map / Ubicación */}

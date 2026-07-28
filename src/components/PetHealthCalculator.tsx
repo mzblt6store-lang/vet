@@ -246,7 +246,7 @@ export const PetHealthCalculator: React.FC<PetHealthCalculatorProps> = ({ onOpen
                 className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm py-3 px-4 rounded-xl shadow-lg shadow-orange-950/20 transition-all flex items-center justify-center gap-2 cursor-pointer mt-2"
               >
                 <Calendar className="w-4 h-4" />
-                <span>Agendar {stage.recommendedServiceName}</span>
+                <span>Agendar {stage.recommendedServiceName} por WhatsApp</span>
                 <ChevronRight className="w-4 h-4" />
               </button>
 

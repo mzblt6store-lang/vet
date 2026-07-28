@@ -7,7 +7,6 @@ import { TeamSection } from './components/TeamSection';
 import { TestimonialsSection } from './components/TestimonialsSection';
 import { InteractiveMapSection } from './components/InteractiveMapSection';
 import { EmergencyBanner } from './components/EmergencyBanner';
-import { NotificationToast } from './components/NotificationToast';
 import { AppointmentModal } from './components/AppointmentModal';
 import { WhatsAppWidget } from './components/WhatsAppWidget';
 import { MobileBottomBar } from './components/MobileBottomBar';
@@ -107,9 +106,6 @@ export default function App() {
         initialServiceId={selectedServiceId}
         initialPetSpecies={selectedPetSpecies}
       />
-
-      {/* Floating Recent Activity Social Proof Toast */}
-      <NotificationToast onOpenBooking={() => handleOpenBooking()} />
 
       {/* Floating WhatsApp Quick Action Widget */}
       <WhatsAppWidget />

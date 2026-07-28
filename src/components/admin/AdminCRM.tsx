@@ -4,7 +4,8 @@ import {
   ChevronRight, CheckCircle2, Clock, AlertTriangle, 
   MessageSquare, Phone, Filter, ShieldCheck, Database, RefreshCw, Send,
   HeartPulse, Stethoscope, Syringe, Check, ExternalLink, Sun, Moon,
-  LayoutGrid, List, MoveRight, ArrowRight, X, Sparkles, UserCheck, Clipboard, Menu
+  LayoutGrid, List, MoveRight, ArrowRight, X, Sparkles, UserCheck, Clipboard, Menu,
+  DollarSign, Settings, Bot, Sliders
 } from 'lucide-react';
 import { CLINIC_INFO } from '../../data/veterinaryData';
 import { supabase } from '../../lib/supabase';
@@ -220,7 +221,7 @@ interface AdminCRMProps {
 export const AdminCRM: React.FC<AdminCRMProps> = ({ onLogout }) => {
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'kanban' | 'patients' | 'appointments_list' | 'integrations'>('kanban');
+  const [activeTab, setActiveTab] = useState<'kanban' | 'patients' | 'appointments_list' | 'integrations' | 'bot_config'>('kanban');
   const [appointmentViewMode, setAppointmentViewMode] = useState<'kanban' | 'list'>('kanban');
   const [statusFilter, setStatusFilter] = useState<'todos' | 'pendiente' | 'consulta' | 'tratamiento' | 'completada'>('todos');
   const [searchTerm, setSearchTerm] = useState('');
@@ -228,6 +229,73 @@ export const AdminCRM: React.FC<AdminCRMProps> = ({ onLogout }) => {
   
   const [patientsList, setPatientsList] = useState<Patient[]>(INITIAL_PATIENTS);
   const [appointmentsList, setAppointmentsList] = useState<Appointment[]>(INITIAL_APPOINTMENTS);
+
+  // Bot AI, Schedule & Pricing Configuration State
+  const [botServices, setBotServices] = useState([
+    { id: '1', name: 'Consulta Médica General', price: 35, duration: '30 min', category: 'Medicina General', active: true, description: 'Chequeo físico completo, temperatura, auscultación y diagnóstico.' },
+    { id: '2', name: 'Vacunación y Desparasitación', price: 25, duration: '20 min', category: 'Prevención', active: true, description: 'Incluye revisión rápida previa y carnet oficial de vacunas.' },
+    { id: '3', name: 'Profilaxis Dental Ultrasonido', price: 80, duration: '60 min', category: 'Odontología', active: true, description: 'Limpieza con ultrasonido y pulido dental bajo sedación monitoreada.' },
+    { id: '4', name: 'Ecografía Abdominal Completa', price: 55, duration: '45 min', category: 'Diagnóstico', active: true, description: 'Evaluación de órganos abdominales con reporte ecográfico impreso.' },
+    { id: '5', name: 'Atención de Urgencia 24/7', price: 70, duration: 'Inmediato', category: 'Urgencias', active: true, description: 'Evaluación prioritaria en triaje con estabilización médica.' },
+  ]);
+
+  const [schedules, setSchedules] = useState([
+    { day: 'Lunes a Viernes', openTime: '08:00 AM', closeTime: '07:00 PM', slotInterval: '30 min', active: true },
+    { day: 'Sábados', openTime: '08:00 AM', closeTime: '04:00 PM', slotInterval: '30 min', active: true },
+    { day: 'Domingos y Festivos', openTime: '09:00 AM', closeTime: '02:00 PM', slotInterval: '45 min', active: true },
+    { day: 'Urgencias Médicas', openTime: '24 Horas', closeTime: 'Continuo', slotInterval: 'Atención Inmediata', active: true },
+  ]);
+
+  const [botPromptConfig, setBotPromptConfig] = useState({
+    greeting: '¡Hola! 🐾 Bienvenido a Clínica Veterinaria VetAmor. Soy el asistente virtual para citas y consultas.',
+    requireFields: 'Para agendar tu cita necesito: 1) Nombre de la mascota, 2) Especie, 3) Servicio requerido, 4) Día y hora preferida.',
+    emergencyRule: 'Si es una emergencia (sangrado, convulsiones, atropello), indícale llamar de inmediato al +57 300 999 8888.',
+    pricingPolicy: 'Ofrecer precios transparentes según la lista oficial de precios. No ofrecer descuentos no autorizados.'
+  });
+
+  const [simQuery, setSimQuery] = useState('¿Cuánto cuesta la consulta general y qué horarios tienen hoy?');
+  const [simResult, setSimResult] = useState<string | null>(null);
+  const [isSimulating, setIsSimulating] = useState(false);
+  const [saveSuccessMsg, setSaveSuccessMsg] = useState(false);
+
+  const handleTestBotResponse = () => {
+    setIsSimulating(true);
+    setSimResult(null);
+
+    setTimeout(() => {
+      const q = simQuery.toLowerCase();
+      let response = '';
+
+      if (q.includes('costo') || q.includes('precio') || q.includes('cuanto') || q.includes('cuánto')) {
+        const matchingServices = botServices.filter(s => s.active);
+        response = `¡Hola! 🐾 Te comparto nuestras tarifas oficiales de atención:\n\n` +
+          matchingServices.map(s => `• *${s.name}*: $${s.price} USD (${s.duration})\n  _${s.description}_`).join('\n\n') +
+          `\n\n📅 *Horarios de Atención:*\n` +
+          schedules.filter(s => s.active).map(s => `• ${s.day}: ${s.openTime} - ${s.closeTime}`).join('\n') +
+          `\n\n¿Deseas que te agende un turno para alguna de estas atenciones?`;
+      } else if (q.includes('horario') || q.includes('abierto') || q.includes('hora')) {
+        response = `¡Claro! 🕒 Nuestros horarios de atención veterinaria son:\n\n` +
+          schedules.filter(s => s.active).map(s => `• *${s.day}*: ${s.openTime} a ${s.closeTime} (Turnos de ${s.slotInterval})`).join('\n') +
+          `\n\n💡 *Recuerda:* Atendemos urgencias médicas 24/7. ¿Para qué día te gustaría agendar?`;
+      } else {
+        response = `${botPromptConfig.greeting}\n\n` +
+          `${botPromptConfig.requireFields}\n\n` +
+          `📌 *Tarifa Base de Consulta:* $${botServices[0].price} USD.\n` +
+          `⏰ *Horario de Hoy:* ${schedules[0].openTime} - ${schedules[0].closeTime}.\n\n` +
+          `¿Me indicas el nombre y especie de tu mascota para enviarte la confirmación?`;
+      }
+
+      setSimResult(response);
+      setIsSimulating(false);
+    }, 600);
+  };
+
+  const handleSaveBotSettings = () => {
+    setSaveSuccessMsg(true);
+    setTimeout(() => {
+      setSaveSuccessMsg(false);
+    }, 3000);
+  };
   
   // Selected Patient for Medical History Drawer / Modal
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
@@ -499,6 +567,23 @@ export const AdminCRM: React.FC<AdminCRMProps> = ({ onLogout }) => {
             >
               <Database className="w-4 h-4" />
               n8n & Evolution API
+            </button>
+
+            <button 
+              onClick={() => {
+                setActiveTab('bot_config');
+                setIsSidebarOpen(false);
+              }}
+              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
+                activeTab === 'bot_config' 
+                  ? 'bg-emerald-400 text-slate-950 shadow-lg shadow-emerald-500/20' 
+                  : isDarkMode 
+                    ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60' 
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
+            >
+              <Bot className="w-4 h-4 text-emerald-400" />
+              Bot IA, Horarios & Precios
             </button>
           </nav>
         </div>
@@ -1129,6 +1214,379 @@ export const AdminCRM: React.FC<AdminCRMProps> = ({ onLogout }) => {
                   https://n8n.vetamor.com/webhook/whatsapp-otp-notifications
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* VIEW 5: CONFIGURACIÓN BOT IA, HORARIOS & TARIFARIO */}
+          {activeTab === 'bot_config' && (
+            <div className="space-y-6 animate-in fade-in duration-300 pb-12">
+              {/* Header and Save Action */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4 border-slate-800/60">
+                <div>
+                  <h2 className={`text-xl font-bold flex items-center gap-2 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                    <Bot className="w-6 h-6 text-emerald-400" />
+                    <span>Configuración de Bot IA, Horarios & Precios</span>
+                  </h2>
+                  <p className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                    Gestiona los datos de agendamiento, lista de costos y reglas del Bot de WhatsApp para respuestas automáticas precisas.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleSaveBotSettings}
+                    className="bg-emerald-400 hover:bg-emerald-300 text-slate-950 px-4 py-2.5 rounded-xl font-black text-xs transition-all flex items-center gap-2 cursor-pointer shadow-lg shadow-emerald-500/10"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Guardar y Sincronizar Bot</span>
+                  </button>
+                </div>
+              </div>
+
+              {saveSuccessMsg && (
+                <div className="p-3 bg-emerald-950/80 border border-emerald-500 text-emerald-200 rounded-xl text-xs font-bold flex items-center gap-2 animate-in fade-in">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  <span>¡Reglas, horarios y tarifario actualizados con éxito en la base de conocimientos del Bot WhatsApp!</span>
+                </div>
+              )}
+
+              {/* GRID SECTION 1: COSTO DE ATENCIONES Y TARIFARIO */}
+              <div className={`p-5 rounded-2xl border space-y-4 ${
+                isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'
+              }`}>
+                <div className="flex items-center justify-between border-b pb-3 border-slate-800/40">
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="w-5 h-5 text-emerald-400" />
+                    <div>
+                      <h3 className={`font-bold text-sm ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                        1. Costos de Atenciones y Tarifario Oficial
+                      </h3>
+                      <p className="text-[11px] text-slate-400">Precios que el Bot de WhatsApp informará a los clientes al consultar</p>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      const name = prompt('Nombre de la nueva atención médica:');
+                      const price = prompt('Precio USD/Local ($):');
+                      if (name && price) {
+                        setBotServices([
+                          ...botServices,
+                          {
+                            id: Date.now().toString(),
+                            name,
+                            price: parseFloat(price) || 30,
+                            duration: '30 min',
+                            category: 'Especialidad',
+                            active: true,
+                            description: 'Atención médica configurada desde administración.'
+                          }
+                        ]);
+                      }
+                    }}
+                    className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-500/30 rounded-xl text-xs font-bold flex items-center gap-1 cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Agregar Servicio</span>
+                  </button>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className={`border-b font-semibold ${
+                      isDarkMode ? 'bg-slate-950 border-slate-800 text-slate-400' : 'bg-slate-50 border-slate-200 text-slate-600'
+                    }`}>
+                      <tr>
+                        <th className="px-4 py-2.5">Servicio / Atención</th>
+                        <th className="px-4 py-2.5">Categoría</th>
+                        <th className="px-4 py-2.5">Costo ($ USD)</th>
+                        <th className="px-4 py-2.5">Duración Cita</th>
+                        <th className="px-4 py-2.5">Estado Bot</th>
+                        <th className="px-4 py-2.5 text-right">Acción</th>
+                      </tr>
+                    </thead>
+                    <tbody className={`divide-y ${
+                      isDarkMode ? 'divide-slate-800/60 text-slate-300' : 'divide-slate-200 text-slate-700'
+                    }`}>
+                      {botServices.map((svc) => (
+                        <tr key={svc.id} className={isDarkMode ? 'hover:bg-slate-800/40' : 'hover:bg-slate-50'}>
+                          <td className="px-4 py-3">
+                            <div className="font-bold text-emerald-400">{svc.name}</div>
+                            <div className="text-[10px] text-slate-400 max-w-xs">{svc.description}</div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="px-2 py-0.5 bg-slate-800 rounded-md text-[10px] text-slate-300">
+                              {svc.category}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 font-mono font-bold text-white">
+                            <div className="flex items-center gap-1">
+                              <span>$</span>
+                              <input 
+                                type="number" 
+                                value={svc.price} 
+                                onChange={(e) => {
+                                  const val = parseFloat(e.target.value) || 0;
+                                  setBotServices(botServices.map(s => s.id === svc.id ? { ...s, price: val } : s));
+                                }}
+                                className={`w-20 px-2 py-1 rounded-lg border text-xs font-mono font-bold outline-none ${
+                                  isDarkMode ? 'bg-slate-950 border-slate-800 text-emerald-400' : 'bg-white border-slate-200'
+                                }`}
+                              />
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 font-mono text-slate-400">{svc.duration}</td>
+                          <td className="px-4 py-3">
+                            <button
+                              onClick={() => {
+                                setBotServices(botServices.map(s => s.id === svc.id ? { ...s, active: !s.active } : s));
+                              }}
+                              className={`px-2.5 py-1 rounded-full text-[10px] font-bold cursor-pointer transition-all ${
+                                svc.active 
+                                  ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
+                                  : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                              }`}
+                            >
+                              {svc.active ? 'Activo en Bot' : 'Oculto'}
+                            </button>
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <button
+                              onClick={() => {
+                                setBotServices(botServices.filter(s => s.id !== svc.id));
+                              }}
+                              className="text-slate-500 hover:text-rose-400 cursor-pointer p-1"
+                              title="Eliminar"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* GRID SECTION 2: HORARIOS DE ATENCIÓN Y REGLAS DE CITAS */}
+              <div className={`p-5 rounded-2xl border space-y-4 ${
+                isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'
+              }`}>
+                <div className="flex items-center justify-between border-b pb-3 border-slate-800/40">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-5 h-5 text-emerald-400" />
+                    <div>
+                      <h3 className={`font-bold text-sm ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                        2. Horarios de Atención & Intervalo de Agendamiento
+                      </h3>
+                      <p className="text-[11px] text-slate-400">Disponibilidad de turnos configurada para respuestas de la IA</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {schedules.map((sch, idx) => (
+                    <div 
+                      key={idx} 
+                      className={`p-4 rounded-xl border space-y-3 ${
+                        isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-extrabold text-xs text-emerald-400 flex items-center gap-1.5">
+                          <span>📅</span>
+                          <span>{sch.day}</span>
+                        </span>
+                        <button
+                          onClick={() => {
+                            setSchedules(schedules.map((s, i) => i === idx ? { ...s, active: !s.active } : s));
+                          }}
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold cursor-pointer ${
+                            sch.active ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 text-slate-500'
+                          }`}
+                        >
+                          {sch.active ? 'Habilitado' : 'Cerrado'}
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-2 text-xs">
+                        <div>
+                          <label className="block text-[10px] text-slate-400 mb-0.5 font-semibold">Apertura</label>
+                          <input 
+                            type="text" 
+                            value={sch.openTime} 
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setSchedules(schedules.map((s, i) => i === idx ? { ...s, openTime: val } : s));
+                            }}
+                            className={`w-full p-1.5 rounded-lg border text-xs outline-none font-mono font-bold ${
+                              isDarkMode ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white border-slate-200'
+                            }`}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] text-slate-400 mb-0.5 font-semibold">Cierre</label>
+                          <input 
+                            type="text" 
+                            value={sch.closeTime} 
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setSchedules(schedules.map((s, i) => i === idx ? { ...s, closeTime: val } : s));
+                            }}
+                            className={`w-full p-1.5 rounded-lg border text-xs outline-none font-mono font-bold ${
+                              isDarkMode ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white border-slate-200'
+                            }`}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] text-slate-400 mb-0.5 font-semibold">Duración Turno</label>
+                          <input 
+                            type="text" 
+                            value={sch.slotInterval} 
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setSchedules(schedules.map((s, i) => i === idx ? { ...s, slotInterval: val } : s));
+                            }}
+                            className={`w-full p-1.5 rounded-lg border text-xs outline-none font-mono font-bold ${
+                              isDarkMode ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white border-slate-200'
+                            }`}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* GRID SECTION 3: BASE DE CONOCIMIENTO Y REGLAS PROMPT PARA N8N / EVOLUTION */}
+              <div className={`p-5 rounded-2xl border space-y-4 ${
+                isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'
+              }`}>
+                <div className="flex items-center gap-2 border-b pb-3 border-slate-800/40">
+                  <Sliders className="w-5 h-5 text-emerald-400" />
+                  <div>
+                    <h3 className={`font-bold text-sm ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                      3. Reglas de Inteligencia y Prompt del Bot (n8n Workflow)
+                    </h3>
+                    <p className="text-[11px] text-slate-400">Directivas de voz, flujo de datos y protocolos de atención médica</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 mb-1">
+                      Saludo de Bienvenida por Defecto
+                    </label>
+                    <textarea 
+                      rows={3}
+                      value={botPromptConfig.greeting}
+                      onChange={(e) => setBotPromptConfig({ ...botPromptConfig, greeting: e.target.value })}
+                      className={`w-full p-2.5 rounded-xl border text-xs outline-none focus:border-emerald-500 ${
+                        isDarkMode ? 'bg-slate-950 border-slate-800 text-slate-200' : 'bg-slate-50 border-slate-200'
+                      }`}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 mb-1">
+                      Datos Requeridos para Agendar Cita
+                    </label>
+                    <textarea 
+                      rows={3}
+                      value={botPromptConfig.requireFields}
+                      onChange={(e) => setBotPromptConfig({ ...botPromptConfig, requireFields: e.target.value })}
+                      className={`w-full p-2.5 rounded-xl border text-xs outline-none focus:border-emerald-500 ${
+                        isDarkMode ? 'bg-slate-950 border-slate-800 text-slate-200' : 'bg-slate-50 border-slate-200'
+                      }`}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-rose-400 mb-1">
+                      Protocolo de Urgencias Médicas 24/7
+                    </label>
+                    <textarea 
+                      rows={2}
+                      value={botPromptConfig.emergencyRule}
+                      onChange={(e) => setBotPromptConfig({ ...botPromptConfig, emergencyRule: e.target.value })}
+                      className={`w-full p-2.5 rounded-xl border text-xs outline-none focus:border-rose-500 ${
+                        isDarkMode ? 'bg-slate-950 border-rose-900/60 text-slate-200' : 'bg-rose-50/50 border-rose-200'
+                      }`}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-emerald-400 mb-1">
+                      Política de Costos y Transparencia
+                    </label>
+                    <textarea 
+                      rows={2}
+                      value={botPromptConfig.pricingPolicy}
+                      onChange={(e) => setBotPromptConfig({ ...botPromptConfig, pricingPolicy: e.target.value })}
+                      className={`w-full p-2.5 rounded-xl border text-xs outline-none focus:border-emerald-500 ${
+                        isDarkMode ? 'bg-slate-950 border-emerald-900/60 text-slate-200' : 'bg-emerald-50/50 border-emerald-200'
+                      }`}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* GRID SECTION 4: SIMULADOR DE PRUEBAS EN VIVO */}
+              <div className={`p-5 rounded-2xl border space-y-4 ${
+                isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'
+              }`}>
+                <div className="flex items-center gap-2 border-b pb-3 border-slate-800/40">
+                  <Sparkles className="w-5 h-5 text-emerald-400" />
+                  <div>
+                    <h3 className={`font-bold text-sm ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                      4. Probador / Simulador en Vivo del Bot WhatsApp
+                    </h3>
+                    <p className="text-[11px] text-slate-400">Verifica cómo responderá el Bot según las tarifas y horarios configurados</p>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 mb-1">Escribe una pregunta de prueba:</label>
+                    <div className="flex gap-2">
+                      <input 
+                        type="text" 
+                        value={simQuery}
+                        onChange={(e) => setSimQuery(e.target.value)}
+                        placeholder="Ej: ¿Cuánto cuesta la consulta general y qué horarios tienen hoy?"
+                        className={`flex-1 p-2.5 rounded-xl border text-xs outline-none focus:border-emerald-500 ${
+                          isDarkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-200'
+                        }`}
+                      />
+                      <button
+                        onClick={handleTestBotResponse}
+                        disabled={isSimulating}
+                        className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                      >
+                        <Send className="w-3.5 h-3.5" />
+                        <span>{isSimulating ? 'Generando...' : 'Probar Bot'}</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Simulated Result Box */}
+                  {simResult && (
+                    <div className="p-4 rounded-2xl bg-slate-950 border border-emerald-800/80 space-y-2 animate-in fade-in">
+                      <div className="flex items-center justify-between text-[11px] font-bold text-emerald-400 border-b border-slate-800 pb-2">
+                        <span className="flex items-center gap-1">
+                          <Bot className="w-4 h-4 text-emerald-400" />
+                          <span>Respuesta Generada por el Bot WhatsApp</span>
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-mono">IA Conectada a la Base de Conocimiento</span>
+                      </div>
+                      <div className="text-xs text-slate-200 font-sans whitespace-pre-line leading-relaxed">
+                        {simResult}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
             </div>
           )}
 

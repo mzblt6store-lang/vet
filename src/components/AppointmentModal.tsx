@@ -77,14 +77,14 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
   };
 
   const handleSendWhatsappConfirmation = () => {
-    const text = `Hola *Clínica Veterinaria VetAmor*, acabo de agendar una cita para mi mascota:\n\n` +
+    const text = `🤖 *AGENDAMIENTO DE CITA CON BOT VETAMOR*\n\n` +
       `📌 *Ticket N°:* ${ticketNumber}\n` +
       `🐾 *Mascota:* ${petName} (${petSpecies.toUpperCase()})\n` +
       `🩺 *Servicio:* ${selectedServiceObj.title}\n` +
       `📅 *Fecha:* ${date}\n` +
-      `⏰ *Hora:* ${timeSlot}\n` +
+      `⏰ *Turno:* ${timeSlot}\n` +
       `👤 *Dueño:* ${ownerName} (${ownerPhone})\n\n` +
-      `¡Por favor confirmen mi turno! Gracias.`;
+      `¡Hola Bot! Deseo agendar y confirmar esta cita para mi mascota.`;
 
     const url = `https://wa.me/${CLINIC_INFO.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(text)}`;
     window.open(url, '_blank');
@@ -104,14 +104,14 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
           </button>
 
           <div className="flex items-center gap-2 mb-1">
-            <span className="bg-orange-500 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-              Cita Rápida
+            <span className="bg-emerald-500 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+              Bot WhatsApp 24/7
             </span>
-            <span className="text-xs text-emerald-200">Reserva en 3 sencillos pasos</span>
+            <span className="text-xs text-emerald-200">Reserva instantánea por WhatsApp</span>
           </div>
 
           <h3 className="text-2xl font-serif font-bold text-white">
-            {step === 4 ? '¡Cita Reservada con Éxito!' : 'Agendar Cita en VetAmor'}
+            {step === 4 ? '¡Solicitud Enviada al Bot!' : 'Agendar Cita por WhatsApp'}
           </h3>
 
           {/* Progress Indicator */}
@@ -391,9 +391,9 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
               <button
                 type="button"
                 onClick={handleNext}
-                className="bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs sm:text-sm px-6 py-3 rounded-full shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm px-6 py-3 rounded-full shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
               >
-                <span>{step === 3 ? 'Confirmar Cita' : 'Siguiente Paso'}</span>
+                <span>{step === 3 ? 'Enviar Cita por WhatsApp' : 'Siguiente Paso'}</span>
                 <ChevronRight className="w-4 h-4" />
               </button>
             </div>

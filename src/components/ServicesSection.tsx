@@ -150,7 +150,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onOpenBooking 
                   }`}
                 >
                   <Calendar className="w-4 h-4" />
-                  <span>Agendar Servicio</span>
+                  <span>Agendar por WhatsApp</span>
                   <ChevronRight className="w-4 h-4" />
                 </button>
               </div>

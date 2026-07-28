@@ -67,7 +67,7 @@ export const Hero: React.FC<HeroProps> = ({ onOpenBooking }) => {
                 className="w-full sm:w-auto bg-orange-500 hover:bg-orange-600 active:scale-98 text-white px-8 py-4 rounded-xl text-base sm:text-lg font-bold shadow-xl shadow-orange-200 transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Calendar className="w-5 h-5 text-white/90" />
-                <span>Cita Rápida Online</span>
+                <span>Agendar Cita por WhatsApp</span>
               </button>
 
               <a
@@ -142,10 +142,10 @@ export const Hero: React.FC<HeroProps> = ({ onOpenBooking }) => {
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-serif font-bold text-emerald-900 text-base flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-emerald-600" />
-                  Agendar Cita en Línea
+                  Agendar Cita por WhatsApp
                 </h3>
                 <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-                  Rápido
+                  Bot 24/7
                 </span>
               </div>
 
@@ -209,7 +209,7 @@ export const Hero: React.FC<HeroProps> = ({ onOpenBooking }) => {
                   type="submit"
                   className="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white font-bold text-sm py-3 rounded-xl shadow-lg shadow-emerald-200 transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  <span>Continuar Cita</span>
+                  <span>Agendar Cita por WhatsApp</span>
                   <ChevronRight className="w-4 h-4" />
                 </button>
               </form>

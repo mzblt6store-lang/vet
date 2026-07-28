@@ -91,10 +91,10 @@ export const Header: React.FC<HeaderProps> = ({ onOpenBooking }) => {
           <div className="hidden sm:flex items-center gap-3">
             <button
               onClick={() => onOpenBooking()}
-              className="bg-emerald-600 text-white px-6 py-2.5 rounded-full text-sm font-bold shadow-lg shadow-emerald-200/50 hover:bg-emerald-700 active:scale-98 transition-all flex items-center gap-2 cursor-pointer"
+              className="bg-emerald-600 text-white px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold shadow-lg shadow-emerald-200/50 hover:bg-emerald-700 active:scale-98 transition-all flex items-center gap-2 cursor-pointer"
             >
-              <Calendar className="w-4 h-4" />
-              <span>Agendar Cita</span>
+              <Calendar className="w-4 h-4 text-emerald-200" />
+              <span>Agendar Cita por WhatsApp</span>
             </button>
           </div>
 
@@ -102,10 +102,10 @@ export const Header: React.FC<HeaderProps> = ({ onOpenBooking }) => {
           <div className="flex items-center lg:hidden gap-2">
             <button
               onClick={() => onOpenBooking()}
-              className="sm:hidden bg-emerald-600 text-white text-xs font-bold px-3 py-2 rounded-full flex items-center gap-1 shadow-md shadow-emerald-200"
+              className="sm:hidden bg-emerald-600 text-white text-[11px] font-bold px-3 py-2 rounded-full flex items-center gap-1 shadow-md shadow-emerald-200"
             >
               <Calendar className="w-3.5 h-3.5" />
-              <span>Cita</span>
+              <span>Cita WhatsApp</span>
             </button>
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -165,8 +165,8 @@ export const Header: React.FC<HeaderProps> = ({ onOpenBooking }) => {
               }}
               className="w-full bg-emerald-600 text-white font-bold py-3 rounded-full shadow-lg shadow-emerald-200 text-center flex items-center justify-center gap-2"
             >
-              <Calendar className="w-5 h-5" />
-              <span>Agendar Cita en 1 Minuto</span>
+              <Calendar className="w-5 h-5 text-emerald-200" />
+              <span>Agendar Cita por WhatsApp (Bot)</span>
             </button>
             <a
               href={`tel:${CLINIC_INFO.emergencyPhone}`}

@@ -106,7 +106,7 @@ export const Footer: React.FC<FooterProps> = ({ onOpenBooking }) => {
                 className="mt-3 w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 px-3 rounded-full text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-md"
               >
                 <Calendar className="w-3.5 h-3.5" />
-                <span>Agendar Cita Rápida</span>
+                <span>Agendar Cita por WhatsApp</span>
               </button>
             </div>
           </div>

@@ -9,18 +9,18 @@ export const WhatsAppWidget: React.FC = () => {
 
   const quickTopics = [
     {
-      id: 'general',
-      title: 'Consulta o Información General',
-      subtitle: 'Respuesta en menos de 5 min',
-      icon: '💬',
-      message: 'Hola *VetAmor*, me gustaría información sobre sus servicios médicos para mi mascota.',
+      id: 'cita',
+      title: '🤖 Agendar Cita con Bot WhatsApp',
+      subtitle: 'Disponibilidad y turnos al instante',
+      icon: '📅',
+      message: 'Hola *Bot VetAmor*, deseo agendar una cita médica para mi mascota.',
     },
     {
-      id: 'cita',
-      title: 'Agendar Cita Rápida',
-      subtitle: 'Consultas, vacunas o baños',
-      icon: '📅',
-      message: 'Hola *VetAmor*, quisiera consultar disponibilidad para agendar una cita con un veterinario.',
+      id: 'general',
+      title: 'Consulta o Información General',
+      subtitle: 'Atención personalizada vía WhatsApp',
+      icon: '💬',
+      message: 'Hola *VetAmor*, me gustaría información sobre sus servicios médicos para mi mascota.',
     },
     {
       id: 'urgencia',
@@ -156,11 +156,11 @@ export const WhatsAppWidget: React.FC = () => {
 
         <div className="text-left pr-1 hidden sm:block">
           <p className="text-xs font-bold leading-none">
-            {isOpen ? 'Cerrar Chat' : '¿Dudas? WhatsApp'}
+            {isOpen ? 'Cerrar Chat' : 'Agendar Cita por WhatsApp'}
           </p>
           {!isOpen && (
             <p className="text-[10px] text-emerald-100 leading-tight font-medium mt-0.5">
-              Info rápida & Citas
+              Atención inmediata con Bot
             </p>
           )}
         </div>
