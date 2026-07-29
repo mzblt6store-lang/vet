@@ -7,18 +7,15 @@ import { TeamSection } from './components/TeamSection';
 import { TestimonialsSection } from './components/TestimonialsSection';
 import { InteractiveMapSection } from './components/InteractiveMapSection';
 import { EmergencyBanner } from './components/EmergencyBanner';
-import { AppointmentModal } from './components/AppointmentModal';
 import { WhatsAppWidget } from './components/WhatsAppWidget';
 import { MobileBottomBar } from './components/MobileBottomBar';
 import { Footer } from './components/Footer';
 import { AdminCRM } from './components/admin/AdminCRM';
 import { AdminLogin } from './components/admin/AdminLogin';
 import { supabase } from './lib/supabase';
+import { CLINIC_INFO, SERVICES } from './data/veterinaryData';
 
 export default function App() {
-  const [bookingModalOpen, setBookingModalOpen] = useState(false);
-  const [selectedServiceId, setSelectedServiceId] = useState<string | undefined>(undefined);
-  const [selectedPetSpecies, setSelectedPetSpecies] = useState<string | undefined>(undefined);
   const [isAdminView, setIsAdminView] = useState(() => 
     window.location.hash === '#admin' || window.location.pathname === '/admin'
   );
@@ -50,13 +47,20 @@ export default function App() {
   }, []);
 
   const handleOpenBooking = (serviceId?: string, petSpecies?: string) => {
-    setSelectedServiceId(serviceId);
-    setSelectedPetSpecies(petSpecies);
-    setBookingModalOpen(true);
-  };
+    let msg = "🤖 *AGENDAMIENTO DE CITA CON BOT VETAMOR*\n\nHola *Bot VetAmor*, me gustaría agendar una cita médica para mi mascota.";
+    if (serviceId) {
+      const svc = SERVICES.find(s => s.id === serviceId);
+      if (svc) {
+        msg += `\n🩺 *Servicio de Interés:* ${svc.title}`;
+      }
+    }
+    if (petSpecies) {
+      msg += `\n🐾 *Especie:* ${petSpecies}`;
+    }
+    msg += "\n\nPor favor indícame los horarios y turnos disponibles para la atención. ¡Gracias!";
 
-  const handleCloseBooking = () => {
-    setBookingModalOpen(false);
+    const url = `https://wa.me/${CLINIC_INFO.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(msg)}`;
+    window.open(url, '_blank');
   };
 
   if (isAdminView) {
@@ -98,14 +102,6 @@ export default function App() {
 
       {/* Footer */}
       <Footer onOpenBooking={() => handleOpenBooking()} />
-
-      {/* Fast Appointment Booking Wizard Modal */}
-      <AppointmentModal
-        isOpen={bookingModalOpen}
-        onClose={handleCloseBooking}
-        initialServiceId={selectedServiceId}
-        initialPetSpecies={selectedPetSpecies}
-      />
 
       {/* Floating WhatsApp Quick Action Widget */}
       <WhatsAppWidget />
